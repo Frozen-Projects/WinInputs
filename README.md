@@ -18,10 +18,10 @@
 - Mouse Wheel Down
 --------------------------------------------------------------------------------------------
 USED DEPENDENCIES
-<iostream>
-<string>
-Windows/WindowsHWrapper.h
-winuser.h
+- <iostream>
+- <string>
+- Windows/WindowsHWrapper.h
+- winuser.h
 
 PURPOSE:
 - This plugin created for "our" startup's internal "desktop" projects !
