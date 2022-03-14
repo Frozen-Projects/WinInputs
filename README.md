@@ -18,8 +18,8 @@
 - Mouse Wheel Down
 --------------------------------------------------------------------------------------------
 USED DEPENDENCIES
-- <iostream>
-- <string>
+- iostream
+- string
 - Windows/WindowsHWrapper.h
 - winuser.h
 
