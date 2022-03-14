@@ -583,10 +583,6 @@ void UWinInputsBPLibrary::SetMousePosition(int32 In_Pos_X, int32 In_Pos_Y, int32
     Out_Pos_X = In_Pos_X * DPI_X;
     Out_Pos_Y = In_Pos_Y * DPI_Y;
 
-    POINT MousePosition;
-    MousePosition.x = Out_Pos_X;
-    MousePosition.y = Out_Pos_Y;
-
     SetCursorPos(Out_Pos_X, Out_Pos_Y);
 }
 
