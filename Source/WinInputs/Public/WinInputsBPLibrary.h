@@ -81,6 +81,21 @@ enum KeyboardInputs
 	Z_Key			UMETA(DisplayName = "Z"),
 };
 
+USTRUCT(BlueprintType)
+struct FWinInfos
+{
+	GENERATED_USTRUCT_BODY()
+
+public:
+
+	UPROPERTY(BlueprintReadWrite, Editanywhere)
+		FString WinName;
+
+	UPROPERTY(BlueprintReadWrite, Editanywhere)
+		int32 WinPID;
+
+};
+
 UCLASS()
 class UWinInputsBPLibrary : public UBlueprintFunctionLibrary
 {
@@ -96,7 +111,7 @@ class UWinInputsBPLibrary : public UBlueprintFunctionLibrary
 	static bool SendKeyboardMacro(TArray<TEnumAsByte<KeyboardInputs>> Array_Buttons);
 
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Get Active Windows", ToolTip = "Description.", Keywords = "get, active, windows"), Category = "Win Inputs")
-	static void GetActiveWindows(TArray<FString>& WindowsNames);
+	static void GetActiveWindows(TArray<FWinInfos>& WindowsInfos);
 
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Bring Window Front", ToolTip = "Description.", Keywords = "bring, window, front"), Category = "Win Inputs")
 	static bool BringWindowFront(const FString WindowString);

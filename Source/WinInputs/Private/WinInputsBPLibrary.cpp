@@ -3,7 +3,8 @@
 #include "WinInputsBPLibrary.h"
 #include <iostream>
 #include <string>
-#include "Windows/WindowsHWrapper.h"  
+#include "Windows/WindowsHWrapper.h" 
+#include <process.h>
 #include "winuser.h"
 #include "WinInputs.h"
 
@@ -547,21 +548,30 @@ bool UWinInputsBPLibrary::SendKeyboardMacro(TArray<TEnumAsByte<KeyboardInputs>> 
     }
 }
 
-void UWinInputsBPLibrary::GetActiveWindows(TArray<FString>& WindowsNames)
+void UWinInputsBPLibrary::GetActiveWindows(TArray<FWinInfos>& WindowsInfos)
 {
     for (HWND WindowHandle = GetTopWindow(NULL); WindowHandle != NULL; WindowHandle = GetNextWindow(WindowHandle, GW_HWNDNEXT))
     {
+        // If process is only a service (not have a Windows) and there is no title, don't count it.
         int WindowTitleLenght = GetWindowTextLength(WindowHandle);
-        if (WindowTitleLenght == 0)
+        if (WindowTitleLenght == 0 || !IsWindowVisible(WindowHandle))
             continue;
 
-        if (!IsWindowVisible(WindowHandle))
-            continue;
+        char* EachWindowTitle = new char[WindowTitleLenght +1];
+        GetWindowTextA(WindowHandle, EachWindowTitle, WindowTitleLenght +1);
 
-        char* EachWindowTitle = new char[WindowTitleLenght + 1];
-        GetWindowTextA(WindowHandle, EachWindowTitle, WindowTitleLenght + 1);
+        FWinInfos STR_WinInfos;
+        DWORD ProcessID;
+        const FString WindowString = EachWindowTitle;
 
-        WindowsNames.Add(EachWindowTitle);
+        // Program Manager is standart Window Process we don't have to count it.
+        if (WindowString != "Program Manager")
+        {
+            GetWindowThreadProcessId(WindowHandle, &ProcessID);
+            STR_WinInfos.WinName = WindowString;
+            STR_WinInfos.WinPID = ProcessID;
+            WindowsInfos.Add(STR_WinInfos);
+        }
     }
 }
 
@@ -569,6 +579,7 @@ bool UWinInputsBPLibrary::BringWindowFront(const FString WindowString)
 {
     const CHAR* WindowChar = TCHAR_TO_ANSI(*WindowString);
     HWND WindowHandle = FindWindowA(NULL, WindowChar);
+
     return BringWindowToTop(WindowHandle);
 }
 
