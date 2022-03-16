@@ -52,7 +52,7 @@
 
 **SPESIFIC DESCRIPTION FOR BLOCKCHAIN WALLETS:**
 - This doesn't and won't get or send any information to a blockchain wallet.
-- If you use it with a capturing solution, it merely shows desktop and send inputs to them for beter user exprience (without take off VR headset for every authorization process).
+- If you use it with a capturing solution, it merely shows desktop and send inputs to OS for beter user exprience (without take off VR headset for every authorization process).
 - We are not a blockchain related company. For this reason, we don't have extensive know-how for wallet SDKs. But as we know, all major NFT related wallets work as browser extensions and there is no C++ SDK to communicate with them. So, implementing them will be hard.
 - At this point, we suggest developers to create two layered login system.
 	- First one is game related authentication and the second one is wallet authentication.
