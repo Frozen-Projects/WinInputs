@@ -42,8 +42,8 @@
 		- If you select this, you need to calculate correct mouse position with target window's position and size. We exposed all informations from GetActiveWindows.
 
 	- **NDI Screen Capture**
-		- You can start it directly with game if you know FWindowsPlatformProcess::CreateProc functions or if you have our DeviceInfos plugin.
-		- But user should select all desktop from **Capture Settings -> Configure RoI** only once. NDI will record it as JSON (you can find it in "%localappdata%\NDI\Studio Monitor") and start it with same configurations.
+		- You can start it directly with game if you know FWindowsPlatformProcess::CreateProc function or if you have our DeviceInfos plugin.
+		- But user should select all desktop from **Capture Settings -> Configure RoI** only once. NDI will record it as JSON (you can find it in "%localappdata%\NDI\Studio Monitor") and start itself with same configurations.
 
 **SAMPLE USECASES:**
 - Using 3D Editors inside UE4 VR
