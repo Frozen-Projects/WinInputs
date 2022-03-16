@@ -66,7 +66,7 @@
 - So, we will update it with "our needs" and right now we have other project priorities.
 
 **UPDATES:**
-- There no dependency which related with Unreal Engine. All of them come from Microsoft Native APIs. So it is fully supported with all minor and major versions. 
+- There is no dependency which related with Unreal Engine. All of them come from Microsoft Native APIs. So it is fully supported with all minor and major versions. 
 - We compiled it with UE4.27 if you need it for different versions, just create a C++ Function Library, copy all codes and includes, compile it.
 
 **PLATFORM SUPPORT:**
