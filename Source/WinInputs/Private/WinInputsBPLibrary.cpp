@@ -548,41 +548,6 @@ bool UWinInputsBPLibrary::SendKeyboardMacro(TArray<TEnumAsByte<KeyboardInputs>> 
     }
 }
 
-void UWinInputsBPLibrary::GetActiveWindows(TArray<FWinInfos>& WindowsInfos)
-{
-    for (HWND WindowHandle = GetTopWindow(NULL); WindowHandle != NULL; WindowHandle = GetNextWindow(WindowHandle, GW_HWNDNEXT))
-    {
-        // If process is only a service (not have a Windows) and there is no title, don't count it.
-        int WindowTitleLenght = GetWindowTextLength(WindowHandle);
-        if (WindowTitleLenght == 0 || !IsWindowVisible(WindowHandle))
-            continue;
-
-        char* EachWindowTitle = new char[WindowTitleLenght +1];
-        GetWindowTextA(WindowHandle, EachWindowTitle, WindowTitleLenght +1);
-
-        FWinInfos STR_WinInfos;
-        DWORD ProcessID;
-        const FString WindowString = EachWindowTitle;
-
-        // Program Manager is standart Window Process we don't have to count it.
-        if (WindowString != "Program Manager")
-        {
-            GetWindowThreadProcessId(WindowHandle, &ProcessID);
-            STR_WinInfos.WinName = WindowString;
-            STR_WinInfos.WinPID = ProcessID;
-            WindowsInfos.Add(STR_WinInfos);
-        }
-    }
-}
-
-bool UWinInputsBPLibrary::BringWindowFront(const FString WindowString)
-{
-    const CHAR* WindowChar = TCHAR_TO_ANSI(*WindowString);
-    HWND WindowHandle = FindWindowA(NULL, WindowChar);
-
-    return BringWindowToTop(WindowHandle);
-}
-
 void UWinInputsBPLibrary::SetMousePosition(int32 In_Pos_X, int32 In_Pos_Y, int32 Widget_Size_X, int32 Widget_Size_Y, int32& Out_Pos_X, int32& Out_Pos_Y)
 {
     int32 Desktop_Resolution_X = GetSystemMetrics(SM_CXSCREEN);
@@ -757,4 +722,70 @@ bool UWinInputsBPLibrary::MouseWheelDown()
     {
         return false;
     }
+}
+
+void UWinInputsBPLibrary::GetActiveWindows(TArray<FWinInfos>& WindowsInfos)
+{
+    for (HWND WindowHandle = GetTopWindow(NULL); WindowHandle != NULL; WindowHandle = GetNextWindow(WindowHandle, GW_HWNDNEXT))
+    {
+        // If process is only a service (not have a Windows) and there is no title, don't count it.
+        int WindowTitleLenght = GetWindowTextLength(WindowHandle);
+        if (WindowTitleLenght == 0 || !IsWindowVisible(WindowHandle))
+            continue;
+
+        char* EachWindowTitle = new char[WindowTitleLenght + 1];
+        GetWindowTextA(WindowHandle, EachWindowTitle, WindowTitleLenght + 1);
+
+        FWinInfos STR_WinInfos;
+        DWORD ProcessID;
+        const FString WindowString = EachWindowTitle;
+
+        RECT WinPos;
+        RECT WinSize;
+
+        // Program Manager is standart Window Process we don't have to count it.
+        if (WindowString != "Program Manager")
+        {
+            GetWindowThreadProcessId(WindowHandle, &ProcessID);
+
+            GetWindowRect(WindowHandle, &WinPos);
+            STR_WinInfos.WinPos.X = WinPos.left;
+            STR_WinInfos.WinPos.Y = WinPos.top;
+
+            GetWindowRect(WindowHandle, &WinSize);
+            STR_WinInfos.WinSize.X = WinSize.right - WinSize.left;
+            STR_WinInfos.WinSize.Y = WinSize.bottom - WinSize.top;
+
+            STR_WinInfos.WinName = WindowString;
+            STR_WinInfos.WinPID = ProcessID;
+            
+            WindowsInfos.Add(STR_WinInfos);
+        }
+    }
+}
+
+bool UWinInputsBPLibrary::BringWindowFront(const FString WindowString)
+{
+    const CHAR* WindowChar = TCHAR_TO_ANSI(*WindowString);
+    HWND WindowHandle = FindWindowA(NULL, WindowChar);
+
+    // If window is minimized, first restore it.
+    if (IsIconic(WindowHandle))
+    {
+        ShowWindow(WindowHandle, SW_RESTORE);
+        return BringWindowToTop(WindowHandle);
+    }
+
+    else
+    {
+        return BringWindowToTop(WindowHandle);
+    }
+}
+
+bool UWinInputsBPLibrary::MinimizeSelectedWindow(const FString WindowString)
+{
+    const CHAR* WindowChar = TCHAR_TO_ANSI(*WindowString);
+    HWND WindowHandle = FindWindowA(NULL, WindowChar);
+
+    return CloseWindow(WindowHandle);
 }

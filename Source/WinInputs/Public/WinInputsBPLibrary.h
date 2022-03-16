@@ -89,10 +89,16 @@ struct FWinInfos
 public:
 
 	UPROPERTY(BlueprintReadWrite, Editanywhere)
-		FString WinName;
+	FString WinName;
 
 	UPROPERTY(BlueprintReadWrite, Editanywhere)
-		int32 WinPID;
+	int32 WinPID;
+
+	UPROPERTY(BlueprintReadWrite, Editanywhere)
+	FVector2D WinPos;
+
+	UPROPERTY(BlueprintReadWrite, Editanywhere)
+	FVector2D WinSize;
 
 };
 
@@ -109,12 +115,6 @@ class UWinInputsBPLibrary : public UBlueprintFunctionLibrary
 
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Send Keyboard Macro", ToolTip = "Description.", Keywords = "send, keyboard, input, macro"), Category = "Win Inputs")
 	static bool SendKeyboardMacro(TArray<TEnumAsByte<KeyboardInputs>> Array_Buttons);
-
-	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Get Active Windows", ToolTip = "Description.", Keywords = "get, active, windows"), Category = "Win Inputs")
-	static void GetActiveWindows(TArray<FWinInfos>& WindowsInfos);
-
-	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Bring Window Front", ToolTip = "Description.", Keywords = "bring, window, front"), Category = "Win Inputs")
-	static bool BringWindowFront(const FString WindowString);
 
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Set Mouse Position", ToolTip = "Description.", Keywords = "set, mouse, position, location"), Category = "Win Inputs")
 	static void SetMousePosition(int32 In_Pos_X, int32 In_Pos_Y, int32 Widget_Size_X, int32 Widget_Size_Y, int32& Out_Pos_X, int32& Out_Pos_Y);
@@ -142,5 +142,14 @@ class UWinInputsBPLibrary : public UBlueprintFunctionLibrary
 
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Mouse Wheel Down", ToolTip = "Description.", Keywords = "wheel, mouse, down"), Category = "Win Inputs")
 	static bool MouseWheelDown();
+
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Get Active Windows", ToolTip = "Description.", Keywords = "get, windows, active"), Category = "Win Inputs")
+	static void GetActiveWindows(TArray<FWinInfos>& WindowsInfos);
+
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Bring Window Front", ToolTip = "Description.", Keywords = "bring, window, front"), Category = "Win Inputs")
+	static bool BringWindowFront(const FString WindowString);
+
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Minimize Selected Window", ToolTip = "Description.", Keywords = "minimize, window, selected"), Category = "Win Inputs")
+	static bool MinimizeSelectedWindow(const FString WindowString);
 
 };
