@@ -7,6 +7,8 @@
 - Get Active Windows
 - Bring Window Front
 - Minimize Window
+- Is UE Top
+- Set Window Title (UE4 Native Function)
 --------------------------------------------------------------------------------------------
 - Set Mouse Position
 - Mouse Press Left
@@ -25,7 +27,7 @@
 - winuser.h
 
 **NOTE:**
-- A different thread (for this case GameThread) can not destroy another thread's window without "FreeConsole" functions.
+- An application doesn't steal another application's focus (There was some solutions but they deprecated with latest Windows 10 builds). So if you change window in UE4's combobox, you can not change from it without returning game. For this reason, we integrated "Is UE Top" function. ComboBox will become disabled after top windows changes and it will become enabled when top windows is UE game.
 - So, GetActiveWindows will also gets each windows' ProcessID.
 - You can use them with our DeviceInfos plugin's Helper TaskKill and Terminal Async functions.
 - But be careful ! It will create same effect with Task Manager -> End Task !
@@ -51,8 +53,9 @@
 - Creating UE4 based remote desktop system (Just pass inputs with an online api)
 
 **SPESIFIC DESCRIPTION FOR BLOCKCHAIN WALLETS:**
-- This doesn't and won't get or send any information to a blockchain wallet.
-- If you use it with a capturing solution, it merely shows desktop and send inputs to OS for beter user exprience (without take off VR headset for every authorization process).
+- This doesn't and won't get any information from blockchain wallets.
+- This doesn't and won't send any information to blockchain wallets.
+- If you use it with a capturing solution, it merely shows desktop and send inputs to "OS itself rather than only game" for beter user exprience (without take off VR headset for every authorization process).
 - We are not a blockchain related company. For this reason, we don't have extensive know-how for wallet SDKs. But as we know, all major NFT related wallets work as browser extensions and there is no C++ SDK to communicate with them. So, implementing them will be hard.
 - At this point, we suggest developers to create two layered login system.
 	- First one is game related authentication and the second one is wallet authentication.
