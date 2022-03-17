@@ -27,7 +27,7 @@
 - winuser.h
 
 **NOTE:**
-- An application can't steal another application's focus (There was some solutions but they deprecated with latest Windows 10 builds). So, if you change top window from UE4's combo box, you can not change from it again without returning to game. For this reason, we integrated "Is UE Top" function. ComboBox will become disabled after top windows changes and it will become enabled and refresh its contents when top windows is UE game.
+- An application can't steal another application's focus (There were some solutions but they deprecated with latest Windows 10 builds). So, if you change top window from UE4's combo box, you can not change from it again without returning to game. For this reason, we integrated "Is UE Top" function. ComboBox will become disabled after top windows changes and it will become enabled and refresh its contents when top windows is UE game.
 - GetActiveWindows will also gets each windows' ProcessID.
 - You can use them with our DeviceInfos plugin's Helper TaskKill and Terminal Async functions.
 - But be careful ! It will create same effect with Task Manager -> End Task !
