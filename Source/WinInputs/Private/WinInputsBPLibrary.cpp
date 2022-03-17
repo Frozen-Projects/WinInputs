@@ -3,8 +3,9 @@
 #include "WinInputsBPLibrary.h"
 #include <iostream>
 #include <string>
-#include "Windows/WindowsHWrapper.h" 
 #include <process.h>
+#include "Engine/GameEngine.h"
+#include "Windows/WindowsHWrapper.h"
 #include "winuser.h"
 #include "WinInputs.h"
 
@@ -548,18 +549,18 @@ bool UWinInputsBPLibrary::SendKeyboardMacro(TArray<TEnumAsByte<KeyboardInputs>> 
     }
 }
 
-void UWinInputsBPLibrary::SetMousePosition(int32 In_Pos_X, int32 In_Pos_Y, int32 Widget_Size_X, int32 Widget_Size_Y, int32& Out_Pos_X, int32& Out_Pos_Y)
+void UWinInputsBPLibrary::SetMousePosition(FVector2D CursorPosition, FVector2D WidgetSize, FVector2D& OutCursorPosition)
 {
     int32 Desktop_Resolution_X = GetSystemMetrics(SM_CXSCREEN);
     int32 Desktop_Resolution_Y = GetSystemMetrics(SM_CYSCREEN);
 
-    float DPI_X = Desktop_Resolution_X / Widget_Size_X;
-    float DPI_Y = Desktop_Resolution_Y / Widget_Size_Y;
+    float DPI_X = Desktop_Resolution_X / WidgetSize.X;
+    float DPI_Y = Desktop_Resolution_Y / WidgetSize.Y;
 
-    Out_Pos_X = In_Pos_X * DPI_X;
-    Out_Pos_Y = In_Pos_Y * DPI_Y;
-
-    SetCursorPos(Out_Pos_X, Out_Pos_Y);
+    OutCursorPosition.X = CursorPosition.X * DPI_X;
+    OutCursorPosition.Y = CursorPosition.Y * DPI_Y;
+    
+    SetCursorPos(int(FMath::TruncToInt(OutCursorPosition.X)), int(FMath::TruncToInt(OutCursorPosition.Y)));
 }
 
 bool UWinInputsBPLibrary::MousePressLeft()
@@ -724,6 +725,7 @@ bool UWinInputsBPLibrary::MouseWheelDown()
     }
 }
 
+
 void UWinInputsBPLibrary::GetActiveWindows(TArray<FWinInfos>& WindowsInfos)
 {
     for (HWND WindowHandle = GetTopWindow(NULL); WindowHandle != NULL; WindowHandle = GetNextWindow(WindowHandle, GW_HWNDNEXT))
@@ -756,7 +758,7 @@ void UWinInputsBPLibrary::GetActiveWindows(TArray<FWinInfos>& WindowsInfos)
             STR_WinInfos.WinSize.X = WinSize.right - WinSize.left;
             STR_WinInfos.WinSize.Y = WinSize.bottom - WinSize.top;
 
-            STR_WinInfos.WinName = WindowString;
+            STR_WinInfos.WinName = EachWindowTitle;
             STR_WinInfos.WinPID = ProcessID;
             
             WindowsInfos.Add(STR_WinInfos);
@@ -766,8 +768,7 @@ void UWinInputsBPLibrary::GetActiveWindows(TArray<FWinInfos>& WindowsInfos)
 
 bool UWinInputsBPLibrary::BringWindowFront(const FString WindowString)
 {
-    const CHAR* WindowChar = TCHAR_TO_ANSI(*WindowString);
-    HWND WindowHandle = FindWindowA(NULL, WindowChar);
+    HWND WindowHandle = FindWindowA(NULL, TCHAR_TO_ANSI(*WindowString));
 
     // If window is minimized, first restore it.
     if (IsIconic(WindowHandle))
@@ -784,8 +785,22 @@ bool UWinInputsBPLibrary::BringWindowFront(const FString WindowString)
 
 bool UWinInputsBPLibrary::MinimizeSelectedWindow(const FString WindowString)
 {
-    const CHAR* WindowChar = TCHAR_TO_ANSI(*WindowString);
-    HWND WindowHandle = FindWindowA(NULL, WindowChar);
+    HWND WindowHandle = FindWindowA(NULL, TCHAR_TO_ANSI(*WindowString));
 
     return CloseWindow(WindowHandle);
+}
+
+bool UWinInputsBPLibrary::IsUETop()
+{
+    UGameEngine* GameEngine = Cast<UGameEngine>(GEngine);
+    if (GameEngine != nullptr)
+    {
+        TSharedPtr<SWindow> GameViewportWindow = GameEngine->GameViewportWindow.Pin();
+        return GameViewportWindow->GetNativeWindow()->IsForegroundWindow();
+    }
+
+    else
+    {
+        return false;
+    }
 }

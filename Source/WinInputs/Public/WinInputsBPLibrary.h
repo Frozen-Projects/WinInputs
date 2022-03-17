@@ -117,7 +117,7 @@ class UWinInputsBPLibrary : public UBlueprintFunctionLibrary
 	static bool SendKeyboardMacro(TArray<TEnumAsByte<KeyboardInputs>> Array_Buttons);
 
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Set Mouse Position", ToolTip = "Description.", Keywords = "set, mouse, position, location"), Category = "Win Inputs")
-	static void SetMousePosition(int32 In_Pos_X, int32 In_Pos_Y, int32 Widget_Size_X, int32 Widget_Size_Y, int32& Out_Pos_X, int32& Out_Pos_Y);
+	static void SetMousePosition(FVector2D CursorPosition, FVector2D WidgetSize, FVector2D& OutCursorPosition);
 
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Mouse Press Left", ToolTip = "Description.", Keywords = "press, mouse, left"), Category = "Win Inputs")
 	static bool MousePressLeft();
@@ -151,5 +151,8 @@ class UWinInputsBPLibrary : public UBlueprintFunctionLibrary
 
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Minimize Selected Window", ToolTip = "Description.", Keywords = "minimize, window, selected"), Category = "Win Inputs")
 	static bool MinimizeSelectedWindow(const FString WindowString);
+
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Is UE in Top", ToolTip = "Description.", Keywords = "is, ue, top"), Category = "Win Inputs")
+	static bool IsUETop();
 
 };
