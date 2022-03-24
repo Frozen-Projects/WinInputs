@@ -1,13 +1,21 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
+// UE Functions.
 #include "WinInputsBPLibrary.h"
+#include "WinInputs.h"
+#include "Engine/GameEngine.h"
+
+// Custom Includes.
+#include "Inputs.h"
+
+// C++ Functions.
 #include <iostream>
 #include <string>
 #include <process.h>
-#include "Engine/GameEngine.h"
+
+// Windows Functions.
 #include "Windows/WindowsHWrapper.h"
 #include "winuser.h"
-#include "WinInputs.h"
 
 UWinInputsBPLibrary::UWinInputsBPLibrary(const FObjectInitializer& ObjectInitializer)
 : Super(ObjectInitializer)
@@ -15,226 +23,221 @@ UWinInputsBPLibrary::UWinInputsBPLibrary(const FObjectInitializer& ObjectInitial
 
 }
 
-bool UWinInputsBPLibrary::PressKeyboardInput(bool ReleaseAfterPress, TEnumAsByte<KeyboardInputs> KeyboardButtons)
+bool UWinInputsBPLibrary::PressKeyboardInput(bool ReleaseAfterPress, EKeyboardInputs KeyboardButtons)
 {
     int Button = 0;
-    
     switch (KeyboardButtons)
     {
-    case WinButton:
+    case EKeyboardInputs::WinButton:
         Button = VK_LWIN;
         break;
         
-    case LeftAlt:
+    case EKeyboardInputs::LeftAlt:
         Button = VK_LMENU;
         break;
 
-    case LeftControl:
+    case EKeyboardInputs::LeftControl:
         Button = VK_LCONTROL;
         break;
 
-    case LeftShift:
+    case EKeyboardInputs::LeftShift:
         Button = VK_LSHIFT;
         break;
 
-    case Tab:
+    case EKeyboardInputs::Tab:
         Button = VK_TAB;
         break;
 
-    case Enter:
+    case EKeyboardInputs::Enter:
         Button = VK_RETURN;
         break;
 
-    case Space:
+    case EKeyboardInputs::Space:
         Button = VK_SPACE;
         break;
 
-    case ESC:
+    case EKeyboardInputs::ESC:
         Button = VK_ESCAPE;
         break;
     
-    case Delete:
+    case EKeyboardInputs::Delete:
         Button = VK_DELETE;
         break;
 
-    case Backspace:
+    case EKeyboardInputs::Backspace:
         Button = VK_BACK;
         break;
 
-    case CapsLock:
+    case EKeyboardInputs::CapsLock:
         Button = VK_CAPITAL;
         break;
 
-    case Zero_Key:
+    case EKeyboardInputs::Zero_Key:
         Button = 0x30;
         break;
 
-    case One_Key:
+    case EKeyboardInputs::One_Key:
         Button = 0x31;
         break;
 
-    case Two_Key:
+    case EKeyboardInputs::Two_Key:
         Button = 0x32;
         break;
 
-    case Three_Key:
+    case EKeyboardInputs::Three_Key:
         Button = 0x33;
         break;
 
-    case Four_Key:
+    case EKeyboardInputs::Four_Key:
         Button = 0x34;
         break;
 
-    case Five_Key:
+    case EKeyboardInputs::Five_Key:
         Button = 0x35;
         break;
 
-    case Six_Key:
+    case EKeyboardInputs::Six_Key:
         Button = 0x36;
         break;
 
-    case Seven_Key:
+    case EKeyboardInputs::Seven_Key:
         Button = 0x37;
         break;
 
-    case Eight_Key:
+    case EKeyboardInputs::Eight_Key:
         Button = 0x38;
         break;
 
-    case Nine_Key:
+    case EKeyboardInputs::Nine_Key:
         Button = 0x39;
         break;
 
-    case A_Key:
+    case EKeyboardInputs::A_Key:
         Button = 0x41;
         break;
 
-    case B_Key:
+    case EKeyboardInputs::B_Key:
         Button = 0x42;
         break;
 
-    case C_Key:
+    case EKeyboardInputs::C_Key:
         Button = 0x43;
         break;
 
-    case TR_C_Key:
+    case EKeyboardInputs::TR_C_Key:
         Button = 0x220;
         break;
 
-    case D_Key:
+    case EKeyboardInputs::D_Key:
         Button = 0x44;
         break;
 
-    case E_Key:
+    case EKeyboardInputs::E_Key:
         Button = 0x45;
         break;
 
-    case F_Key:
+    case EKeyboardInputs::F_Key:
         Button = 0x46;
         break;
 
-    case G_Key:
+    case EKeyboardInputs::G_Key:
         Button = 0x47;
         break;
 
-    case TR_G_Key:
+    case EKeyboardInputs::TR_G_Key:
         Button = 0x219;
         break;
 
-    case H_Key:
+    case EKeyboardInputs::H_Key:
         Button = 0x48;
         break;
 
-    case I_Key:
+    case EKeyboardInputs::I_Key:
         Button = 0x49;
         break;
 
-    case TR_I_Key:
+    case EKeyboardInputs::TR_I_Key:
         Button = 0x222;
         break;
 
-    case J_Key:
+    case EKeyboardInputs::J_Key:
         Button = 0x4A;
         break;
 
-    case K_Key:
+    case EKeyboardInputs::K_Key:
         Button = 0x4B;
         break;
 
-    case L_Key:
+    case EKeyboardInputs::L_Key:
         Button = 0x4C;
         break;
 
-    case M_Key:
+    case EKeyboardInputs::M_Key:
         Button = 0x4D;
         break;
 
-    case N_Key:
+    case EKeyboardInputs::N_Key:
         Button = 0x4E;
         break;
 
-    case O_Key:
+    case EKeyboardInputs::O_Key:
         Button = 0x4F;
         break;
 
-    case TR_O_Key:
+    case EKeyboardInputs::TR_O_Key:
         Button = 0x191;
         break;
 
-    case P_Key:
+    case EKeyboardInputs::P_Key:
         Button = 0x50;
         break;
 
-    case Q_Key:
+    case EKeyboardInputs::Q_Key:
         Button = 0x51;
         break;
 
-    case R_Key:
+    case EKeyboardInputs::R_Key:
         Button = 0x52;
         break;
 
-    case S_Key:
+    case EKeyboardInputs::S_Key:
         Button = 0x53;
         break;
 
-    case TR_S_Key:
+    case EKeyboardInputs::TR_S_Key:
         Button = 0x186;
         break;
 
-    case T_Key:
+    case EKeyboardInputs::T_Key:
         Button = 0x54;
         break;
 
-    case U_Key:
+    case EKeyboardInputs::U_Key:
         Button = 0x55;
         break;
 
-    case TR_U_Key:
+    case EKeyboardInputs::TR_U_Key:
         Button = 0x221;
         break;
 
-    case V_Key:
+    case EKeyboardInputs::V_Key:
         Button = 0x56;
         break;
 
-    case W_Key:
+    case EKeyboardInputs::W_Key:
         Button = 0x57;
         break;
 
-    case X_Key:
+    case EKeyboardInputs::X_Key:
         Button = 0x58;
         break;
 
-    case Y_Key:
+    case EKeyboardInputs::Y_Key:
         Button = 0x59;
         break;
 
-    case Z_Key:
+    case EKeyboardInputs::Z_Key:
         Button = 0x5A;
-        break;
-
-    default:
-        Button = 0;
         break;
     }
     
@@ -283,226 +286,221 @@ bool UWinInputsBPLibrary::PressKeyboardInput(bool ReleaseAfterPress, TEnumAsByte
     }
 }
 
-bool UWinInputsBPLibrary::ReleaseKeyboardInput(TEnumAsByte<KeyboardInputs> KeyboardButtons)
+bool UWinInputsBPLibrary::ReleaseKeyboardInput(EKeyboardInputs KeyboardButtons)
 {
     int Button = 0;
-
     switch (KeyboardButtons)
     {
-    case WinButton:
+    case EKeyboardInputs::WinButton:
         Button = VK_LWIN;
         break;
 
-    case LeftAlt:
+    case EKeyboardInputs::LeftAlt:
         Button = VK_LMENU;
         break;
 
-    case LeftControl:
+    case EKeyboardInputs::LeftControl:
         Button = VK_LCONTROL;
         break;
 
-    case LeftShift:
+    case EKeyboardInputs::LeftShift:
         Button = VK_LSHIFT;
         break;
 
-    case Tab:
+    case EKeyboardInputs::Tab:
         Button = VK_TAB;
         break;
 
-    case Enter:
+    case EKeyboardInputs::Enter:
         Button = VK_RETURN;
         break;
 
-    case Space:
+    case EKeyboardInputs::Space:
         Button = VK_SPACE;
         break;
 
-    case ESC:
+    case EKeyboardInputs::ESC:
         Button = VK_ESCAPE;
         break;
 
-    case Delete:
+    case EKeyboardInputs::Delete:
         Button = VK_DELETE;
         break;
 
-    case Backspace:
+    case EKeyboardInputs::Backspace:
         Button = VK_BACK;
         break;
 
-    case CapsLock:
+    case EKeyboardInputs::CapsLock:
         Button = VK_CAPITAL;
         break;
 
-    case Zero_Key:
+    case EKeyboardInputs::Zero_Key:
         Button = 0x30;
         break;
 
-    case One_Key:
+    case EKeyboardInputs::One_Key:
         Button = 0x31;
         break;
 
-    case Two_Key:
+    case EKeyboardInputs::Two_Key:
         Button = 0x32;
         break;
 
-    case Three_Key:
+    case EKeyboardInputs::Three_Key:
         Button = 0x33;
         break;
 
-    case Four_Key:
+    case EKeyboardInputs::Four_Key:
         Button = 0x34;
         break;
 
-    case Five_Key:
+    case EKeyboardInputs::Five_Key:
         Button = 0x35;
         break;
 
-    case Six_Key:
+    case EKeyboardInputs::Six_Key:
         Button = 0x36;
         break;
 
-    case Seven_Key:
+    case EKeyboardInputs::Seven_Key:
         Button = 0x37;
         break;
 
-    case Eight_Key:
+    case EKeyboardInputs::Eight_Key:
         Button = 0x38;
         break;
 
-    case Nine_Key:
+    case EKeyboardInputs::Nine_Key:
         Button = 0x39;
         break;
 
-    case A_Key:
+    case EKeyboardInputs::A_Key:
         Button = 0x41;
         break;
 
-    case B_Key:
+    case EKeyboardInputs::B_Key:
         Button = 0x42;
         break;
 
-    case C_Key:
+    case EKeyboardInputs::C_Key:
         Button = 0x43;
         break;
 
-    case TR_C_Key:
+    case EKeyboardInputs::TR_C_Key:
         Button = 0x220;
         break;
 
-    case D_Key:
+    case EKeyboardInputs::D_Key:
         Button = 0x44;
         break;
 
-    case E_Key:
+    case EKeyboardInputs::E_Key:
         Button = 0x45;
         break;
 
-    case F_Key:
+    case EKeyboardInputs::F_Key:
         Button = 0x46;
         break;
 
-    case G_Key:
+    case EKeyboardInputs::G_Key:
         Button = 0x47;
         break;
 
-    case TR_G_Key:
+    case EKeyboardInputs::TR_G_Key:
         Button = 0x219;
         break;
 
-    case H_Key:
+    case EKeyboardInputs::H_Key:
         Button = 0x48;
         break;
 
-    case I_Key:
+    case EKeyboardInputs::I_Key:
         Button = 0x49;
         break;
 
-    case TR_I_Key:
+    case EKeyboardInputs::TR_I_Key:
         Button = 0x222;
         break;
 
-    case J_Key:
+    case EKeyboardInputs::J_Key:
         Button = 0x4A;
         break;
 
-    case K_Key:
+    case EKeyboardInputs::K_Key:
         Button = 0x4B;
         break;
 
-    case L_Key:
+    case EKeyboardInputs::L_Key:
         Button = 0x4C;
         break;
 
-    case M_Key:
+    case EKeyboardInputs::M_Key:
         Button = 0x4D;
         break;
 
-    case N_Key:
+    case EKeyboardInputs::N_Key:
         Button = 0x4E;
         break;
 
-    case O_Key:
+    case EKeyboardInputs::O_Key:
         Button = 0x4F;
         break;
 
-    case TR_O_Key:
+    case EKeyboardInputs::TR_O_Key:
         Button = 0x191;
         break;
 
-    case P_Key:
+    case EKeyboardInputs::P_Key:
         Button = 0x50;
         break;
 
-    case Q_Key:
+    case EKeyboardInputs::Q_Key:
         Button = 0x51;
         break;
 
-    case R_Key:
+    case EKeyboardInputs::R_Key:
         Button = 0x52;
         break;
 
-    case S_Key:
+    case EKeyboardInputs::S_Key:
         Button = 0x53;
         break;
 
-    case TR_S_Key:
+    case EKeyboardInputs::TR_S_Key:
         Button = 0x186;
         break;
 
-    case T_Key:
+    case EKeyboardInputs::T_Key:
         Button = 0x54;
         break;
 
-    case U_Key:
+    case EKeyboardInputs::U_Key:
         Button = 0x55;
         break;
 
-    case TR_U_Key:
+    case EKeyboardInputs::TR_U_Key:
         Button = 0x221;
         break;
 
-    case V_Key:
+    case EKeyboardInputs::V_Key:
         Button = 0x56;
         break;
 
-    case W_Key:
+    case EKeyboardInputs::W_Key:
         Button = 0x57;
         break;
 
-    case X_Key:
+    case EKeyboardInputs::X_Key:
         Button = 0x58;
         break;
 
-    case Y_Key:
+    case EKeyboardInputs::Y_Key:
         Button = 0x59;
         break;
 
-    case Z_Key:
+    case EKeyboardInputs::Z_Key:
         Button = 0x5A;
-        break;
-
-    default:
-        Button = 0;
         break;
     }
 
@@ -525,7 +523,7 @@ bool UWinInputsBPLibrary::ReleaseKeyboardInput(TEnumAsByte<KeyboardInputs> Keybo
     }
 }
 
-bool UWinInputsBPLibrary::SendKeyboardMacro(TArray<TEnumAsByte<KeyboardInputs>> Array_Buttons)
+bool UWinInputsBPLibrary::SendKeyboardMacro(TArray<EKeyboardInputs> Array_Buttons)
 {
     TArray<bool> AnyError;
     for (int32 ButtonIndex = 0; ButtonIndex < Array_Buttons.Num(); ButtonIndex++)

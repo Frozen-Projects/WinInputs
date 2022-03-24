@@ -3,6 +3,7 @@
 #pragma once
 
 #include "Kismet/BlueprintFunctionLibrary.h"
+#include "Inputs.h"
 #include "WinInputsBPLibrary.generated.h"
 
 /* 
@@ -23,63 +24,6 @@
 *	https://wiki.unrealengine.com/Custom_Blueprint_Node_Creation
 */
 
-UENUM()
-enum KeyboardInputs
-{
-	WinButton		UMETA(DisplayName = "Windows"),
-	LeftAlt			UMETA(DisplayName = "Left Alt"),
-	LeftControl		UMETA(DisplayName = "Left Control"),
-	LeftShift		UMETA(DisplayName = "Left Shift"),
-	Tab				UMETA(DisplayName = "Tab"),
-	Enter			UMETA(DisplayName = "Enter"),
-	Space			UMETA(DisplayName = "Space"),
-	ESC				UMETA(DisplayName = "Escape"),
-	Delete			UMETA(DisplayName = "Delete"),
-	Backspace		UMETA(DisplayName = "Backspace"),
-	CapsLock		UMETA(DisplayName = "Caps Lock"),
-	Zero_Key		UMETA(DisplayName = "0"),
-	One_Key			UMETA(DisplayName = "1"),
-	Two_Key			UMETA(DisplayName = "2"),
-	Three_Key		UMETA(DisplayName = "3"),
-	Four_Key		UMETA(DisplayName = "4"),
-	Five_Key		UMETA(DisplayName = "5"),
-	Six_Key			UMETA(DisplayName = "6"),
-	Seven_Key		UMETA(DisplayName = "7"),
-	Eight_Key		UMETA(DisplayName = "8"),
-	Nine_Key		UMETA(DisplayName = "9"),
-	A_Key			UMETA(DisplayName = "A"),
-	B_Key			UMETA(DisplayName = "B"),
-	C_Key			UMETA(DisplayName = "C"),
-	TR_C_Key		UMETA(DisplayName = "Ç"),
-	D_Key			UMETA(DisplayName = "D"),
-	E_Key			UMETA(DisplayName = "E"),
-	F_Key			UMETA(DisplayName = "F"),
-	G_Key			UMETA(DisplayName = "G"),
-	TR_G_Key		UMETA(DisplayName = "Ğ"),
-	H_Key			UMETA(DisplayName = "H"),
-	I_Key			UMETA(DisplayName = "I"),
-	TR_I_Key		UMETA(DisplayName = "İ"),
-	J_Key			UMETA(DisplayName = "J"),
-	K_Key			UMETA(DisplayName = "K"),
-	L_Key			UMETA(DisplayName = "L"),
-	M_Key			UMETA(DisplayName = "M"),
-	N_Key			UMETA(DisplayName = "N"),
-	O_Key			UMETA(DisplayName = "O"),
-	TR_O_Key		UMETA(DisplayName = "Ö"),
-	P_Key			UMETA(DisplayName = "P"),
-	Q_Key			UMETA(DisplayName = "Q"),
-	R_Key			UMETA(DisplayName = "R"),
-	S_Key			UMETA(DisplayName = "S"),
-	TR_S_Key		UMETA(DisplayName = "Ş"),
-	T_Key			UMETA(DisplayName = "T"),
-	U_Key			UMETA(DisplayName = "U"),
-	TR_U_Key		UMETA(DisplayName = "Ü"),
-	V_Key			UMETA(DisplayName = "V"),
-	W_Key			UMETA(DisplayName = "W"),
-	X_Key			UMETA(DisplayName = "X"),
-	Y_Key			UMETA(DisplayName = "Y"),
-	Z_Key			UMETA(DisplayName = "Z"),
-};
 
 USTRUCT(BlueprintType)
 struct FWinInfos
@@ -89,16 +33,16 @@ struct FWinInfos
 public:
 
 	UPROPERTY(BlueprintReadWrite, Editanywhere)
-	FString WinName;
+		FString WinName;
 
 	UPROPERTY(BlueprintReadWrite, Editanywhere)
-	int32 WinPID;
+		int32 WinPID;
 
 	UPROPERTY(BlueprintReadWrite, Editanywhere)
-	FVector2D WinPos;
+		FVector2D WinPos;
 
 	UPROPERTY(BlueprintReadWrite, Editanywhere)
-	FVector2D WinSize;
+		FVector2D WinSize;
 
 };
 
@@ -108,13 +52,13 @@ class UWinInputsBPLibrary : public UBlueprintFunctionLibrary
 	GENERATED_UCLASS_BODY()
 
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Press Keyboard Input", ToolTip = "Description.", Keywords = "press, keyboard, input"), Category = "Win Inputs")
-	static bool PressKeyboardInput(bool ReleaseAfterPress, TEnumAsByte<KeyboardInputs> KeyboardButtons);
+	static bool PressKeyboardInput(bool ReleaseAfterPress, EKeyboardInputs KeyboardButtons);
 
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Release Keyboard Input", ToolTip = "Description.", Keywords = "release, keyboard, input"), Category = "Win Inputs")
-	static bool ReleaseKeyboardInput(TEnumAsByte<KeyboardInputs> KeyboardButtons);
+	static bool ReleaseKeyboardInput(EKeyboardInputs KeyboardButtons);
 
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Send Keyboard Macro", ToolTip = "Description.", Keywords = "send, keyboard, input, macro"), Category = "Win Inputs")
-	static bool SendKeyboardMacro(TArray<TEnumAsByte<KeyboardInputs>> Array_Buttons);
+	static bool SendKeyboardMacro(TArray<EKeyboardInputs> Array_Buttons);
 
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Set Mouse Position", ToolTip = "Description.", Keywords = "set, mouse, position, location"), Category = "Win Inputs")
 	static void SetMousePosition(FVector2D CursorPosition, FVector2D WidgetSize, FVector2D& OutCursorPosition);
