@@ -96,7 +96,7 @@ class UWinInputsBPLibrary : public UBlueprintFunctionLibrary
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Open Pocess with BP", ToolTip = "Opens an existing process with FWindowsPlatformProcess::OpenProcess()", Keywords = "open, process, bp"), Category = "Win Inputs|Windows")
 	static void OpenProcessBP(int32 ProcessID);
 
-	UFUNCTION(BlueprintPure, meta = (DisplayName = "Bring Window Front", ToolTip = "Description.", Keywords = "bring, window, front"), Category = "Win Inputs|Windows")
+	UFUNCTION(BlueprintPure, meta = (DisplayName = "Get Current Process ID", ToolTip = "It uses FWindowsPlatformProcess::GetCurrentProcessId()", Keywords = "get, current, pid, process, id"), Category = "Win Inputs|Windows")
 	static int32 GetCurrentPID();
 
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Minimize Selected Window", ToolTip = "Description.", Keywords = "minimize, window, selected"), Category = "Win Inputs|Windows")
