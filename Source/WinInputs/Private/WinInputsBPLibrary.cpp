@@ -781,6 +781,16 @@ bool UWinInputsBPLibrary::BringWindowFront(const FString WindowString)
     }
 }
 
+void UWinInputsBPLibrary::OpenProcessBP(int32 ProcessID)
+{
+    FWindowsPlatformProcess::OpenProcess((uint32_t)ProcessID);
+}
+
+int32 UWinInputsBPLibrary::GetCurrentPID()
+{
+    return (int32_t)FWindowsPlatformProcess::GetCurrentProcessId();
+}
+
 bool UWinInputsBPLibrary::MinimizeSelectedWindow(const FString WindowString)
 {
     HWND WindowHandle = FindWindowA(NULL, TCHAR_TO_ANSI(*WindowString));
