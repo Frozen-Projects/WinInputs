@@ -5,6 +5,8 @@
 - Send Keyboard Macro
 --------------------------------------------------------------------------------------------
 - Get Active Windows
+- Get Current ProcessID
+- Open Process with BP
 - Bring Window Front
 - Minimize Window
 - Is UE Top
