@@ -549,14 +549,8 @@ bool UWinInputsBPLibrary::SendKeyboardMacro(TArray<EKeyboardInputs> Array_Button
 
 void UWinInputsBPLibrary::SetMousePosition(FVector2D CursorPosition, FVector2D WidgetSize, FVector2D& OutCursorPosition)
 {
-    int32 Desktop_Resolution_X = GetSystemMetrics(SM_CXSCREEN);
-    int32 Desktop_Resolution_Y = GetSystemMetrics(SM_CYSCREEN);
-
-    float DPI_X = Desktop_Resolution_X / WidgetSize.X;
-    float DPI_Y = Desktop_Resolution_Y / WidgetSize.Y;
-
-    OutCursorPosition.X = CursorPosition.X * DPI_X;
-    OutCursorPosition.Y = CursorPosition.Y * DPI_Y;
+    OutCursorPosition.X = CursorPosition.X / (WidgetSize.X / GetSystemMetrics(SM_CXSCREEN));
+    OutCursorPosition.Y = CursorPosition.Y / (WidgetSize.Y / GetSystemMetrics(SM_CYSCREEN));
     
     SetCursorPos(int(FMath::TruncToInt(OutCursorPosition.X)), int(FMath::TruncToInt(OutCursorPosition.Y)));
 }
