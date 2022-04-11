@@ -8,12 +8,12 @@
 // Custom Includes.
 #include "Inputs.h"
 
-// C++ Functions.
+// C++ Includes.
 #include <iostream>
 #include <string>
 #include <process.h>
 
-// Windows Functions.
+// Windows Includes.
 #include "Windows/WindowsHWrapper.h"
 #include "winuser.h"
 
