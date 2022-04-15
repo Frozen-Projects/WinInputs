@@ -90,7 +90,7 @@ class UWinInputsBPLibrary : public UBlueprintFunctionLibrary
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Get Active Windows", ToolTip = "Description.", Keywords = "get, windows, active"), Category = "Win Inputs|Windows")
 	static void GetActiveWindows(TArray<FWinInfos>& WindowsInfos);
 
-	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Bring Window Front", ToolTip = "Description.", Keywords = "bring, window, front"), Category = "Win Inputs|Windows")
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Bring Window Front", ToolTip = "It brings external window to front.", Keywords = "bring, window, front"), Category = "Win Inputs|Windows")
 	static bool BringWindowFront(const FString WindowString);
 
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Open Pocess with BP", ToolTip = "Opens an existing process with FWindowsPlatformProcess::OpenProcess()", Keywords = "open, process, bp"), Category = "Win Inputs|Windows")
