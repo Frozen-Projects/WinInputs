@@ -14,8 +14,10 @@
 #include <process.h>
 
 // Windows Includes.
+THIRD_PARTY_INCLUDES_START
 #include "Windows/WindowsHWrapper.h"
 #include "winuser.h"
+THIRD_PARTY_INCLUDES_END
 
 UWinInputsBPLibrary::UWinInputsBPLibrary(const FObjectInitializer& ObjectInitializer)
 : Super(ObjectInitializer)
@@ -716,7 +718,6 @@ bool UWinInputsBPLibrary::MouseWheelDown()
         return false;
     }
 }
-
 
 void UWinInputsBPLibrary::GetActiveWindows(TArray<FWinInfos>& WindowsInfos)
 {
