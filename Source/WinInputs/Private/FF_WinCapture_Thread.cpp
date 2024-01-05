@@ -3,9 +3,15 @@
 #include "FF_WinCapture_Thread.h"
 #include "FF_WinCapture.h"
 
+// UE Includes.
+#include "ImageCore.h"
+
 THIRD_PARTY_INCLUDES_START
 #include "Windows/WindowsHWrapper.h"
 #include "winuser.h"
+
+#include <iostream>  
+#include <algorithm>  
 THIRD_PARTY_INCLUDES_END
 
 FFF_WinCapture_Thread::FFF_WinCapture_Thread(AFF_WinCapture* In_Parent_Actor)
@@ -77,35 +83,61 @@ void FFF_WinCapture_Thread::Toggle(bool bIsPause)
 
 bool FFF_WinCapture_Thread::Callback_Get_Window_Buffer(FString& Error)
 {
-	HDC hScreenDC = GetDC(0);
+	HDC Target_Dc = NULL;
+	HWND Target_Handle = NULL;
+	
+	if (this->WindowName == "Desktop")
+	{
+		Target_Handle = GetDesktopWindow();
+		Target_Dc = GetDC(NULL);
+	}
+
+	else
+	{
+		Target_Handle = FindWindowA(NULL, TCHAR_TO_UTF8(*this->WindowName));
+		Target_Dc = GetDC(Target_Handle);
+	}
+
+	RECT TargetWindowRect;
+	GetWindowRect(Target_Handle, &TargetWindowRect);
+	FVector2D CaptureSize = FVector2D(TargetWindowRect.right - TargetWindowRect.left, TargetWindowRect.bottom - TargetWindowRect.top);
+	
 	// Create compatible device context which will store the copied image
-	HDC hMyDC = CreateCompatibleDC(hScreenDC);
+	HDC Compatible_Dc = CreateCompatibleDC(Target_Dc);
 
 	// Get screen properties
-	int iScreenWidth = GetSystemMetrics(SM_CXSCREEN);
-	int iScreenHeight = GetSystemMetrics(SM_CYSCREEN);
-	int iBpi = GetDeviceCaps(hScreenDC, BITSPIXEL);
+	int iBpi = GetDeviceCaps(Target_Dc, BITSPIXEL);
+	size_t BufferSize = CaptureSize.X * CaptureSize.Y * 4;
 
 	// Fill BITMAPINFO struct
 	BITMAPINFO info;
 	info.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-	info.bmiHeader.biWidth = iScreenWidth;
-	info.bmiHeader.biHeight = iScreenHeight;
+	info.bmiHeader.biWidth = CaptureSize.X;
+	info.bmiHeader.biHeight = CaptureSize.Y;
 	info.bmiHeader.biPlanes = 1;
 	info.bmiHeader.biBitCount = iBpi;
 	info.bmiHeader.biCompression = BI_RGB;
 
 	// Create bitmap, getting pointer to raw data (this is the important part)
-	FCapturedWindowDatas CapturedWindowDatas;
-	HBITMAP hBitmap = CreateDIBSection(hMyDC, &info, DIB_RGB_COLORS, (void**)&CapturedWindowDatas.Buffer, 0, 0);
+
+	FImageView CapturedImage;
+	CapturedImage.Format = ERawImageFormat::BGRA8;
+	CapturedImage.GammaSpace = EGammaSpace::Linear;
+	CapturedImage.NumSlices = 1;
+	CapturedImage.SizeX = CaptureSize.X;
+	CapturedImage.SizeY = CaptureSize.Y;
+
+	HBITMAP hBitmap = CreateDIBSection(Compatible_Dc, &info, DIB_RGB_COLORS, (void**)&CapturedImage.RawData, 0, 0);
+	
 	// Select it into your DC
-	SelectObject(hMyDC, hBitmap);
+	SelectObject(Compatible_Dc, hBitmap);
 
 	// Copy image from screen
-	BitBlt(hMyDC, 0, 0, iScreenWidth, iScreenHeight, hScreenDC, 0, 0, SRCCOPY);
+	BitBlt(Compatible_Dc, 0, 0, CaptureSize.X, CaptureSize.Y, Target_Dc, 1, 1, SRCCOPY);
 
-	CapturedWindowDatas.WindowSize = FVector2D(iScreenWidth, iScreenHeight);
-	CapturedWindowDatas.BufferSize = iScreenWidth * iScreenHeight * 4;
+	FCapturedWindowDatas CapturedWindowDatas;
+	CapturedWindowDatas.Result = CapturedImage;
+	CapturedWindowDatas.BufferSize = BufferSize;
 
 	if (!this->ParentActor->Circ_Captured_Window.Enqueue(CapturedWindowDatas))
 	{

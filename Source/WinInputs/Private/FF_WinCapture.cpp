@@ -79,7 +79,7 @@ void AFF_WinCapture::GenerateTexture()
 		return;
 	}
 
-	if (!CapturedWindowDatas.Buffer)
+	if (!CapturedWindowDatas.Result.RawData)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Captured window buffer is invalid."));
 		return;
@@ -87,13 +87,13 @@ void AFF_WinCapture::GenerateTexture()
 
 	if (!this->CapturedTexture)
 	{
-		this->CapturedTexture = UTexture2D::CreateTransient(CapturedWindowDatas.WindowSize.X, CapturedWindowDatas.WindowSize.Y, PF_B8G8R8A8);
+		this->CapturedTexture = UTexture2D::CreateTransient(CapturedWindowDatas.Result.SizeX, CapturedWindowDatas.Result.SizeY, PF_B8G8R8A8);
 		this->CapturedTexture->NeverStream = true;
 		this->CapturedTexture->CompressionSettings = TextureCompressionSettings::TC_VectorDisplacementmap;
 
 		FTexture2DMipMap& Texture_Mip = this->CapturedTexture->GetPlatformData()->Mips[0];
 		void* Texture_Data = Texture_Mip.BulkData.Lock(LOCK_READ_WRITE);
-		FMemory::Memcpy(Texture_Data, CapturedWindowDatas.Buffer, CapturedWindowDatas.BufferSize);
+		FMemory::Memcpy(Texture_Data, CapturedWindowDatas.Result.RawData, CapturedWindowDatas.BufferSize);
 		Texture_Mip.BulkData.Unlock();
 		this->CapturedTexture->UpdateResource();
 
@@ -104,15 +104,8 @@ void AFF_WinCapture::GenerateTexture()
 
 	else
 	{
-		ENQUEUE_RENDER_COMMAND(CaptureWindowCommand)([this, CapturedWindowDatas](FRHICommandListImmediate& CommandList)
-			{
-				uint32 DestStride = 0;
-				FRHITexture* TextureRHI = this->CapturedTexture->GetResource()->GetTextureRHI();
-				uint32_t* Buffer = (uint32_t*)RHILockTexture2D(TextureRHI, 0, EResourceLockMode::RLM_WriteOnly, DestStride, false, true);
-				FMemory::Memcpy(Buffer, CapturedWindowDatas.Buffer, CapturedWindowDatas.BufferSize);
-				RHIUnlockTexture2D(TextureRHI, 0, false, true);
-			}
-		);
+		const auto Region = new FUpdateTextureRegion2D(0, 0, 0, 0, CapturedWindowDatas.Result.SizeX, CapturedWindowDatas.Result.SizeY);
+		this->CapturedTexture->UpdateTextureRegions(0, 1, Region, 4 * CapturedWindowDatas.Result.SizeX, 4, reinterpret_cast<uint8*>(CapturedWindowDatas.Result.RawData));
 
 		DelegateWindowCapture.Broadcast();
 

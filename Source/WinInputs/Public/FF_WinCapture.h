@@ -20,12 +20,9 @@ struct WININPUTS_API FCapturedWindowDatas
 	GENERATED_BODY()
 
 public:
-
-	void* Buffer;
+	
+	FImageView Result;
 	size_t BufferSize;
-
-	UPROPERTY(BlueprintReadWrite)
-	FVector2D WindowSize = FVector2D(0, 0);
 
 };
 
