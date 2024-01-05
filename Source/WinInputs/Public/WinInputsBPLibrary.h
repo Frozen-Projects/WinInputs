@@ -26,7 +26,7 @@
 
 
 USTRUCT(BlueprintType)
-struct FWinInfos
+struct WININPUTS_API FWinInfos
 {
 	GENERATED_USTRUCT_BODY()
 

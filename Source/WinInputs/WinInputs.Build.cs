@@ -14,14 +14,12 @@ public class WinInputs : ModuleRules
 			}
 			);
 				
-		
 		PrivateIncludePaths.AddRange(
 			new string[] {
 				// ... add other private include paths required here ...
 			}
 			);
 			
-		
 		PublicDependencyModuleNames.AddRange(
 			new string[]
 			{
@@ -30,7 +28,6 @@ public class WinInputs : ModuleRules
 			}
 			);
 			
-		
 		PrivateDependencyModuleNames.AddRange(
 			new string[]
 			{
@@ -38,10 +35,11 @@ public class WinInputs : ModuleRules
 				"Engine",
 				"Slate",
 				"SlateCore",
-				// ... add private dependencies that you statically link with here ...	
+                "RHI",				// FRHICommandListImmediate and Enqueue Rendering Commands
+				"RenderCore",		// FRHICommandListImmediate and Enqueue Rendering Commands
+				"ImageWrapper",
 			}
 			);
-		
 		
 		DynamicallyLoadedModuleNames.AddRange(
 			new string[]
