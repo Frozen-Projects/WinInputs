@@ -3,11 +3,6 @@
 #include "FF_WinCapture_Thread.h"
 #include "FF_WinCapture.h"
 
-THIRD_PARTY_INCLUDES_START
-#include "Windows/WindowsHWrapper.h"
-#include "winuser.h"
-THIRD_PARTY_INCLUDES_END
-
 FFF_WinCapture_Thread::FFF_WinCapture_Thread(AFF_WinCapture* In_Parent_Actor)
 {
 	if (In_Parent_Actor)
@@ -33,6 +28,13 @@ FFF_WinCapture_Thread::~FFF_WinCapture_Thread()
 
 bool FFF_WinCapture_Thread::Init()
 {
+	FString Error;
+	if (!this->Callback_GDI_Init(Error))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s"), *FString(Error));
+		return false;
+	}
+
 	this->bStartThread = true;
 	return true;
 }
@@ -42,7 +44,7 @@ uint32 FFF_WinCapture_Thread::Run()
 	while (this->bStartThread)
 	{
 		FString Error;
-		if (!this->ParentActor->Data_Queue.Enqueue(this->Callback_Buffer_GDI_2(Error)))
+		if (!this->Callback_GDI_Buffer(Error) || !this->ParentActor->Data_Queue.Enqueue(CapturedDatas))
 		{
 			UE_LOG(LogTemp, Warning, TEXT("%s"), *FString(Error));
 		}
@@ -56,6 +58,7 @@ uint32 FFF_WinCapture_Thread::Run()
 void FFF_WinCapture_Thread::Stop()
 {
 	this->bStartThread = false;
+	this->Callback_GDI_Release();
 }
 
 void FFF_WinCapture_Thread::Toggle(bool bIsPause)
@@ -66,122 +69,66 @@ void FFF_WinCapture_Thread::Toggle(bool bIsPause)
 	}
 }
 
-FCapturedWindowDatas FFF_WinCapture_Thread::Callback_Buffer_GDI_1(FString& Error)
+bool FFF_WinCapture_Thread::Callback_GDI_Init(FString& Error)
 {
-	if (this->ParentActor->WindowName.IsEmpty())
-	{
-		Error = "Capture target name shouldn't be empty.";
-		return FCapturedWindowDatas();
-	}
-
-	HWND TargetHandle = NULL;
-	HDC DesktopDeviceContext = NULL;
-
-	if (this->ParentActor->WindowName == "Desktop")
-	{
-		TargetHandle = GetDesktopWindow();
-		DesktopDeviceContext = GetDC(NULL);
-	}
-
-	else
-	{
-		TargetHandle = FindWindowA(NULL, TCHAR_TO_UTF8(*this->ParentActor->WindowName));
-		DesktopDeviceContext = GetWindowDC(TargetHandle);
-	}
-
-	HDC CaptureContext = CreateCompatibleDC(DesktopDeviceContext);
+	DesktopHandle = GetDesktopWindow();
+	DC_Destination = CreateCompatibleDC(NULL);
 
 	RECT CaputedRectangle;
-	GetWindowRect(TargetHandle, &CaputedRectangle);
-	FVector2D CaptureSize = FVector2D(CaputedRectangle.right - CaputedRectangle.left, CaputedRectangle.bottom - CaputedRectangle.top);
-	size_t BufferSize = CaptureSize.X * CaptureSize.Y * sizeof(FColor);
-
-	HBITMAP CapturedBitmap = CreateCompatibleBitmap(CaptureContext, CaptureSize.X, CaptureSize.Y);
-	SelectObject(CaptureContext, CapturedBitmap);
-
-	PrintWindow(TargetHandle, CaptureContext, PW_CLIENTONLY);
-	
-	BITMAPINFOHEADER BitmapInfoHeader;
-	memset(&BitmapInfoHeader, 0, sizeof(BITMAPINFOHEADER));
-	BitmapInfoHeader.biSize = sizeof(BITMAPINFOHEADER);
-	BitmapInfoHeader.biPlanes = 1;
-	BitmapInfoHeader.biBitCount = 32;
-	BitmapInfoHeader.biWidth = CaptureSize.X;
-	BitmapInfoHeader.biHeight = -CaptureSize.Y;
-	BitmapInfoHeader.biCompression = BI_RGB;
-	BitmapInfoHeader.biSizeImage = BufferSize;
-
-	BitBlt(CaptureContext, 0, 0, CaptureSize.X, CaptureSize.Y, DesktopDeviceContext, 0, 0, SRCCOPY);
-	//ReleaseDC(NULL, DesktopDeviceContext);
-
-	FCapturedWindowDatas CapturedDatas;
-	CapturedDatas.Buffer = (uint8*)malloc(BufferSize);
-	CapturedDatas.BufferSize = BufferSize;
-	CapturedDatas.Resolution = CaptureSize;
-	
-	GetDIBits(CaptureContext, CapturedBitmap, 0, CaptureSize.Y, CapturedDatas.Buffer, (BITMAPINFO*)&BitmapInfoHeader, DIB_RGB_COLORS);
-
-	//DeleteObject(CapturedBitmap);
-	//DeleteDC(CaptureContext);
-
-	return CapturedDatas;
-}
-
-FCapturedWindowDatas FFF_WinCapture_Thread::Callback_Buffer_GDI_2(FString& Error)
-{
-	if (this->ParentActor->WindowName.IsEmpty())
-	{
-		Error = "Capture target name shouldn't be empty.";
-		return FCapturedWindowDatas();
-	}
-
-	HWND TargetHandle = NULL;
-	HDC DesktopDeviceContext = NULL;
-
-	if (this->ParentActor->WindowName == "Desktop")
-	{
-		TargetHandle = GetDesktopWindow();
-		DesktopDeviceContext = GetDC(NULL);
-	}
-
-	else
-	{
-		TargetHandle = FindWindowA(NULL, TCHAR_TO_UTF8(*this->ParentActor->WindowName));
-		DesktopDeviceContext = GetWindowDC(TargetHandle);
-	}
-
-	HDC CaptureContext = CreateCompatibleDC(DesktopDeviceContext);
-
-	RECT CaputedRectangle;
-	GetWindowRect(TargetHandle, &CaputedRectangle);
-	FVector2D CaptureSize = FVector2D(CaputedRectangle.right - CaputedRectangle.left, CaputedRectangle.bottom - CaputedRectangle.top);
-	size_t BufferSize = CaptureSize.X * CaptureSize.Y * sizeof(FColor);
+	GetWindowRect(DesktopHandle, &CaputedRectangle);
+	CapturedDatas.Resolution = FVector2D(CaputedRectangle.right - CaputedRectangle.left, CaputedRectangle.bottom - CaputedRectangle.top);
+	CapturedDatas.BufferSize = CapturedDatas.Resolution.X * CapturedDatas.Resolution.Y * sizeof(FColor);
 
 	BITMAPINFO BitmapInfo;
 	memset(&BitmapInfo, 0, sizeof(BITMAPINFO));
 	BitmapInfo.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-	BitmapInfo.bmiHeader.biWidth = CaptureSize.X;
-	BitmapInfo.bmiHeader.biHeight = -CaptureSize.Y;
+	BitmapInfo.bmiHeader.biWidth = CapturedDatas.Resolution.X;
+	
+	// We need to flip up right.
+	BitmapInfo.bmiHeader.biHeight = -CapturedDatas.Resolution.Y;
+	
 	BitmapInfo.bmiHeader.biPlanes = 1;
-	BitmapInfo.bmiHeader.biBitCount = GetDeviceCaps(DesktopDeviceContext, BITSPIXEL);
+	BitmapInfo.bmiHeader.biBitCount = 32;
 	BitmapInfo.bmiHeader.biCompression = BI_RGB;
 
-	FCapturedWindowDatas CapturedDatas;
-	CapturedDatas.BufferSize = BufferSize;
-	CapturedDatas.Resolution = CaptureSize;
-	CapturedDatas.Buffer = (uint8*)malloc(BufferSize);
-	HBITMAP CapturedBitmap = CreateDIBSection(CaptureContext, &BitmapInfo, DIB_RGB_COLORS, (void**)&CapturedDatas.Buffer, 0, 0);
+	CapturedBitmap = CreateDIBSection(DC_Destination, &BitmapInfo, DIB_RGB_COLORS, (void**)&CapturedDatas.Buffer, NULL, NULL);
+	if (!CapturedBitmap)
+	{
+		DeleteDC(DC_Destination);
+		Error = "Unable to create bitmap.";
+		return false;
+	}
 
-	// Select it into your DC
-	SelectObject(CaptureContext, CapturedBitmap);
+	SelectObject(DC_Destination, CapturedBitmap);
 
-	// Copy image from screen
-	BitBlt(CaptureContext, 0, 0, CaptureSize.X, CaptureSize.X, DesktopDeviceContext, 1, 1, SRCCOPY);
-
-	return CapturedDatas;
+	return true;
 }
 
-FCapturedWindowDatas FFF_WinCapture_Thread::Callback_Buffer_DX(FString& Error)
+void FFF_WinCapture_Thread::Callback_GDI_Release()
 {
-	return FCapturedWindowDatas();
+	if (DC_Destination)
+	{
+		ReleaseDC(NULL, DC_Destination);
+		DeleteDC(DC_Destination);
+	}
+
+	if (CapturedBitmap)
+	{
+		DeleteObject(CapturedBitmap);
+	}
+}
+
+bool FFF_WinCapture_Thread::Callback_GDI_Buffer(FString& Error)
+{
+	HDC DC_Source = GetDC(NULL);
+	if (!DC_Source)
+	{
+		Error = "Unable to get source DC";
+		return false;
+	}
+
+	BitBlt(DC_Destination, 0, 0, CapturedDatas.Resolution.X, CapturedDatas.Resolution.Y, DC_Source, 1, 1, SRCCOPY);
+	ReleaseDC(NULL, DC_Source);
+
+	return true;
 }

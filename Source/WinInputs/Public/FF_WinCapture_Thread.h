@@ -7,6 +7,11 @@
 // UE Includes.
 #include "HAL/Runnable.h"
 
+THIRD_PARTY_INCLUDES_START
+#include "Windows/WindowsHWrapper.h"
+#include "winuser.h"
+THIRD_PARTY_INCLUDES_END
+
 // Fordward Declerations.
 class FRunnableThread;
 class AFF_WinCapture;
@@ -47,8 +52,14 @@ protected:
 
 private:
 
-	virtual FCapturedWindowDatas Callback_Buffer_GDI_1(FString& Error);
-	virtual FCapturedWindowDatas Callback_Buffer_GDI_2(FString& Error);
-	virtual FCapturedWindowDatas Callback_Buffer_DX(FString& Error);
+	HDC DC_Destination = NULL;
+	HWND DesktopHandle = NULL;
+	HBITMAP CapturedBitmap = NULL;
+
+	FCapturedWindowDatas CapturedDatas;
+	
+	virtual bool Callback_GDI_Init(FString& Error);
+	virtual void Callback_GDI_Release();
+	virtual bool Callback_GDI_Buffer(FString& Error);
 	
 };
