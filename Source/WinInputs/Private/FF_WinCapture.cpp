@@ -7,8 +7,6 @@ AFF_WinCapture::AFF_WinCapture()
 {
 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	this->PrimaryActorTick.bCanEverTick = true;
-
-	this->PrimaryActorTick.TickInterval = 0.03334;
 }
 
 // Called when the game starts or when spawned
@@ -81,7 +79,7 @@ void AFF_WinCapture::GenerateTexture()
 		return;
 	}
 
-	if (!CapturedWindowDatas.Buffer || CapturedWindowDatas.BufferSize == 0)
+	if (!CapturedWindowDatas.IsDataValid())
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Captured window buffer is invalid."));
 		return;

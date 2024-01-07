@@ -56,6 +56,9 @@ public:
 	UPROPERTY(BlueprintReadWrite, meta = (ToolTip = "", ExposeOnSpawn = "true"))
 	FString WindowName;
 
+	UPROPERTY(BlueprintReadWrite, meta = (ToolTip = "", ExposeOnSpawn = "true"))
+	int32 MonitorIndex = 0;
+
 	UPROPERTY(BlueprintReadOnly)
 	UTexture2D* CapturedTexture = nullptr;
 

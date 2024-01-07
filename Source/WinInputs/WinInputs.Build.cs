@@ -1,5 +1,7 @@
 // Some copyright should be here...
 
+using System;
+using System.IO;
 using UnrealBuildTool;
 
 public class WinInputs : ModuleRules
@@ -7,37 +9,29 @@ public class WinInputs : ModuleRules
 	public WinInputs(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
-		
-		PublicIncludePaths.AddRange(
-			new string[] {
-				// ... add public include paths required here ...
-			}
-			);
-				
-		PrivateIncludePaths.AddRange(
-			new string[] {
-				// ... add other private include paths required here ...
-			}
-			);
-			
-		PublicDependencyModuleNames.AddRange(
-			new string[]
-			{
-				"Core",
+
+        if (UnrealTargetPlatform.Win64 == Target.Platform)
+        {
+            //PublicAdditionalLibraries.Add("Shcore.lib");
+        }
+
+        PublicDependencyModuleNames.AddRange(
+            new string[]
+            {
+                "Core",
 				// ... add other public dependencies that you statically link with here ...
 			}
-			);
-			
-		PrivateDependencyModuleNames.AddRange(
+            );
+
+        PrivateDependencyModuleNames.AddRange(
 			new string[]
 			{
 				"CoreUObject",
 				"Engine",
 				"Slate",
 				"SlateCore",
-                "RHI",				// FRHICommandListImmediate and Enqueue Rendering Commands
-				"RenderCore",		// FRHICommandListImmediate and Enqueue Rendering Commands
-			}
+                "ApplicationCore",
+            }
 			);
 		
 		DynamicallyLoadedModuleNames.AddRange(

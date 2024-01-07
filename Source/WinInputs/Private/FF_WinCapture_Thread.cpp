@@ -3,6 +3,9 @@
 #include "FF_WinCapture_Thread.h"
 #include "FF_WinCapture.h"
 
+// UE Includes.
+#include "GenericPlatform/GenericApplication.h"		// Get monitor infos to select.
+
 FFF_WinCapture_Thread::FFF_WinCapture_Thread(AFF_WinCapture* In_Parent_Actor)
 {
 	if (In_Parent_Actor)
@@ -28,6 +31,16 @@ FFF_WinCapture_Thread::~FFF_WinCapture_Thread()
 
 bool FFF_WinCapture_Thread::Init()
 {
+	if (this->ParentActor->MonitorIndex < 0)
+	{
+		this->MonitorIndex = 0;
+	}
+
+	else
+	{
+		this->MonitorIndex = this->ParentActor->MonitorIndex;
+	}
+	
 	FString Error;
 	if (!this->Callback_GDI_Init(Error))
 	{
@@ -44,12 +57,15 @@ uint32 FFF_WinCapture_Thread::Run()
 	while (this->bStartThread)
 	{
 		FString Error;
-		if (!this->Callback_GDI_Buffer(Error) || !this->ParentActor->Data_Queue.Enqueue(CapturedDatas))
+		if (!this->Callback_GDI_Buffer(Error))
 		{
 			UE_LOG(LogTemp, Warning, TEXT("%s"), *FString(Error));
 		}
 
-		FPlatformProcess::Sleep(0.03334);
+		if (!this->ParentActor->Data_Queue.Enqueue(CapturedDatas))
+		{
+			UE_LOG(LogTemp, Warning, TEXT("There is a problem to enqueue captured window datas."));
+		}
 	}
 
 	return 0;
@@ -71,25 +87,29 @@ void FFF_WinCapture_Thread::Toggle(bool bIsPause)
 
 bool FFF_WinCapture_Thread::Callback_GDI_Init(FString& Error)
 {
-	DesktopHandle = GetDesktopWindow();
-	DC_Destination = CreateCompatibleDC(NULL);
+	FDisplayMetrics Display;
+	FDisplayMetrics::RebuildDisplayMetrics(Display);
 
-	RECT CaputedRectangle;
-	GetWindowRect(DesktopHandle, &CaputedRectangle);
-	CapturedDatas.Resolution = FVector2D(CaputedRectangle.right - CaputedRectangle.left, CaputedRectangle.bottom - CaputedRectangle.top);
+	CapturedDatas.ScreenStart.X = Display.MonitorInfo[MonitorIndex].WorkArea.Left;
+	CapturedDatas.ScreenStart.Y = Display.MonitorInfo[MonitorIndex].WorkArea.Top;
+	CapturedDatas.Resolution.X = Display.MonitorInfo[MonitorIndex].DisplayRect.Right - Display.MonitorInfo[MonitorIndex].DisplayRect.Left;
+	CapturedDatas.Resolution.Y = Display.MonitorInfo[MonitorIndex].DisplayRect.Bottom - Display.MonitorInfo[MonitorIndex].DisplayRect.Top;
 	CapturedDatas.BufferSize = CapturedDatas.Resolution.X * CapturedDatas.Resolution.Y * sizeof(FColor);
+
+	DC_Destination = CreateCompatibleDC(NULL);
 
 	BITMAPINFO BitmapInfo;
 	memset(&BitmapInfo, 0, sizeof(BITMAPINFO));
 	BitmapInfo.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
 	BitmapInfo.bmiHeader.biWidth = CapturedDatas.Resolution.X;
-	
+	BitmapInfo.bmiHeader.biPlanes = 1;
+	BitmapInfo.bmiHeader.biCompression = BI_RGB;
+
 	// We need to flip up right.
 	BitmapInfo.bmiHeader.biHeight = -CapturedDatas.Resolution.Y;
 	
-	BitmapInfo.bmiHeader.biPlanes = 1;
+	// Unreal Engine use 32 Bit color because alpha.
 	BitmapInfo.bmiHeader.biBitCount = 32;
-	BitmapInfo.bmiHeader.biCompression = BI_RGB;
 
 	CapturedBitmap = CreateDIBSection(DC_Destination, &BitmapInfo, DIB_RGB_COLORS, (void**)&CapturedDatas.Buffer, NULL, NULL);
 	if (!CapturedBitmap)
@@ -127,7 +147,7 @@ bool FFF_WinCapture_Thread::Callback_GDI_Buffer(FString& Error)
 		return false;
 	}
 
-	BitBlt(DC_Destination, 0, 0, CapturedDatas.Resolution.X, CapturedDatas.Resolution.Y, DC_Source, 1, 1, SRCCOPY);
+	BitBlt(DC_Destination, 0, 0, CapturedDatas.Resolution.X, CapturedDatas.Resolution.Y, DC_Source, CapturedDatas.ScreenStart.X, CapturedDatas.ScreenStart.Y, SRCCOPY);
 	ReleaseDC(NULL, DC_Source);
 
 	return true;
