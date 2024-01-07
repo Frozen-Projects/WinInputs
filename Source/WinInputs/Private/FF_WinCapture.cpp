@@ -3,12 +3,12 @@
 #include "FF_WinCapture.h"
 
 // Sets default values
-AFF_WinCapture::AFF_WinCapture() : Circ_Captured_Window(1000)
+AFF_WinCapture::AFF_WinCapture()
 {
 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	this->PrimaryActorTick.bCanEverTick = true;
 
-	this->PrimaryActorTick.TickInterval = 0.016;
+	this->PrimaryActorTick.TickInterval = 0.03334;
 }
 
 // Called when the game starts or when spawned
@@ -47,7 +47,7 @@ bool AFF_WinCapture::Window_Capture_Start()
 		return false;
 	}
 
-	this->ThreadName = "Thread_" + this->WindowName.Left(7);
+	this->ThreadName = "Thread_WinCap_" + FString::FromInt(FMath::RandRange(0, 9999));
 	this->Thread_WinCapture = new FFF_WinCapture_Thread(this);
 
 	if (!this->Thread_WinCapture)
@@ -58,6 +58,7 @@ bool AFF_WinCapture::Window_Capture_Start()
 	}
 
 	this->bIsCaptureStarted = true;
+
 	return true;
 }
 
@@ -68,18 +69,19 @@ void AFF_WinCapture::Window_Capture_Stop()
 		this->bIsCaptureStarted = false;
 		delete this->Thread_WinCapture;
 	}
+
+	this->CapturedTexture->ReleaseResource();
 }
 
 void AFF_WinCapture::GenerateTexture()
 {
-	FCapturedWindowDatas CapturedWindowDatas;
-	if (!this->Circ_Captured_Window.Dequeue(CapturedWindowDatas))
+	if (!this->Data_Queue.Dequeue(CapturedWindowDatas))
 	{
 		UE_LOG(LogTemp, Warning, TEXT("There is a problem to dequeue captured window datas."));
 		return;
 	}
 
-	if (!CapturedWindowDatas.Result.RawData)
+	if (!CapturedWindowDatas.Buffer || CapturedWindowDatas.BufferSize == 0)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Captured window buffer is invalid."));
 		return;
@@ -87,28 +89,21 @@ void AFF_WinCapture::GenerateTexture()
 
 	if (!this->CapturedTexture)
 	{
-		this->CapturedTexture = UTexture2D::CreateTransient(CapturedWindowDatas.Result.SizeX, CapturedWindowDatas.Result.SizeY, PF_B8G8R8A8);
+		this->CapturedTexture = UTexture2D::CreateTransient(CapturedWindowDatas.Resolution.X, CapturedWindowDatas.Resolution.Y, PF_B8G8R8A8);
 		this->CapturedTexture->NeverStream = true;
 		this->CapturedTexture->CompressionSettings = TextureCompressionSettings::TC_VectorDisplacementmap;
-
-		FTexture2DMipMap& Texture_Mip = this->CapturedTexture->GetPlatformData()->Mips[0];
-		void* Texture_Data = Texture_Mip.BulkData.Lock(LOCK_READ_WRITE);
-		FMemory::Memcpy(Texture_Data, CapturedWindowDatas.Result.RawData, CapturedWindowDatas.BufferSize);
-		Texture_Mip.BulkData.Unlock();
 		this->CapturedTexture->UpdateResource();
-
-		DelegateWindowCapture.Broadcast();
 
 		return;
 	}
 
 	else
 	{
-		const auto Region = new FUpdateTextureRegion2D(0, 0, 0, 0, CapturedWindowDatas.Result.SizeX, CapturedWindowDatas.Result.SizeY);
-		this->CapturedTexture->UpdateTextureRegions(0, 1, Region, 4 * CapturedWindowDatas.Result.SizeX, 4, reinterpret_cast<uint8*>(CapturedWindowDatas.Result.RawData));
+		const auto Region = new FUpdateTextureRegion2D(0, 0, 0, 0, CapturedWindowDatas.Resolution.X, CapturedWindowDatas.Resolution.Y);
+		this->CapturedTexture->UpdateTextureRegions(0, 1, Region, 4 * CapturedWindowDatas.Resolution.X, 4, CapturedWindowDatas.Buffer);
 
 		DelegateWindowCapture.Broadcast();
-
+		
 		return;
 	}
 }

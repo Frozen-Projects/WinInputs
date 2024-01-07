@@ -7,24 +7,12 @@
 
 // UE Includes
 #include "HAL/RunnableThread.h"
-#include "Containers/CircularQueue.h"
+#include "Containers/Queue.h"
 
 // Threads
 #include "FF_WinCapture_Thread.h"
 
 #include "FF_WinCapture.generated.h"
-
-USTRUCT(BlueprintType)
-struct WININPUTS_API FCapturedWindowDatas
-{
-	GENERATED_BODY()
-
-public:
-	
-	FImageView Result;
-	size_t BufferSize;
-
-};
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FDelegateWindowCapture);
 
@@ -55,8 +43,13 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
+public:
+
 	FString ThreadName;
-	TCircularQueue<FCapturedWindowDatas> Circ_Captured_Window = TCircularQueue<FCapturedWindowDatas>(1000);
+	
+	TQueue<FCapturedWindowDatas> Data_Queue;
+	
+	FCapturedWindowDatas CapturedWindowDatas;
 
 public:
 

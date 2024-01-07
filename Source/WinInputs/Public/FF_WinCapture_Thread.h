@@ -11,6 +11,16 @@
 class FRunnableThread;
 class AFF_WinCapture;
 
+struct FCapturedWindowDatas
+{
+
+public:
+
+	uint8* Buffer = nullptr;
+	size_t BufferSize = 0;
+	FVector2D Resolution = FVector2D();
+};
+
 class FFF_WinCapture_Thread : public FRunnable
 {
 	
@@ -29,14 +39,16 @@ public:
 
 	virtual void Toggle(bool bIsPause);
 
-	virtual bool Callback_Get_Window_Buffer(FString& Error);
-
 protected:
 	
 	bool bStartThread = false;
 	FRunnableThread* RunnableThread = nullptr;
-	
 	AFF_WinCapture* ParentActor = nullptr;
-	FString WindowName;
 
+private:
+
+	virtual FCapturedWindowDatas Callback_Buffer_GDI_1(FString& Error);
+	virtual FCapturedWindowDatas Callback_Buffer_GDI_2(FString& Error);
+	virtual FCapturedWindowDatas Callback_Buffer_DX(FString& Error);
+	
 };

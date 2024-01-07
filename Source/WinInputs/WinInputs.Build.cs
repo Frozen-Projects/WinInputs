@@ -37,8 +37,6 @@ public class WinInputs : ModuleRules
 				"SlateCore",
                 "RHI",				// FRHICommandListImmediate and Enqueue Rendering Commands
 				"RenderCore",		// FRHICommandListImmediate and Enqueue Rendering Commands
-				"ImageWrapper",
-				"ImageCore",
 			}
 			);
 		
