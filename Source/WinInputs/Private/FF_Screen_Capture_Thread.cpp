@@ -1,12 +1,12 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-#include "FF_WinCapture_Thread.h"
-#include "FF_WinCapture.h"
+#include "FF_Capture_Screen_Thread.h"
+#include "FF_Capture_Screen.h"
 
 // UE Includes.
 #include "GenericPlatform/GenericApplication.h"		// Get monitor infos to select.
 
-FFF_WinCapture_Thread::FFF_WinCapture_Thread(AFF_WinCapture* In_Parent_Actor)
+FFF_Capture_Screen_Thread::FFF_Capture_Screen_Thread(AFF_Capture_Screen* In_Parent_Actor)
 {
 	if (In_Parent_Actor)
 	{
@@ -16,7 +16,7 @@ FFF_WinCapture_Thread::FFF_WinCapture_Thread(AFF_WinCapture* In_Parent_Actor)
 	this->RunnableThread = FRunnableThread::Create(this, *this->ParentActor->ThreadName);
 }
 
-FFF_WinCapture_Thread::~FFF_WinCapture_Thread()
+FFF_Capture_Screen_Thread::~FFF_Capture_Screen_Thread()
 {
 	if (this->RunnableThread)
 	{
@@ -29,7 +29,7 @@ FFF_WinCapture_Thread::~FFF_WinCapture_Thread()
 	}
 }
 
-bool FFF_WinCapture_Thread::Init()
+bool FFF_Capture_Screen_Thread::Init()
 {
 	if (this->ParentActor->MonitorIndex < 0)
 	{
@@ -52,7 +52,7 @@ bool FFF_WinCapture_Thread::Init()
 	return true;
 }
 
-uint32 FFF_WinCapture_Thread::Run()
+uint32 FFF_Capture_Screen_Thread::Run()
 {
 	while (this->bStartThread)
 	{
@@ -71,13 +71,13 @@ uint32 FFF_WinCapture_Thread::Run()
 	return 0;
 }
 
-void FFF_WinCapture_Thread::Stop()
+void FFF_Capture_Screen_Thread::Stop()
 {
 	this->bStartThread = false;
 	this->Callback_GDI_Release();
 }
 
-void FFF_WinCapture_Thread::Toggle(bool bIsPause)
+void FFF_Capture_Screen_Thread::Toggle(bool bIsPause)
 {
 	if (this->RunnableThread)
 	{
@@ -85,7 +85,7 @@ void FFF_WinCapture_Thread::Toggle(bool bIsPause)
 	}
 }
 
-bool FFF_WinCapture_Thread::Callback_GDI_Init(FString& Error)
+bool FFF_Capture_Screen_Thread::Callback_GDI_Init(FString& Error)
 {
 	FDisplayMetrics Display;
 	FDisplayMetrics::RebuildDisplayMetrics(Display);
@@ -124,7 +124,7 @@ bool FFF_WinCapture_Thread::Callback_GDI_Init(FString& Error)
 	return true;
 }
 
-void FFF_WinCapture_Thread::Callback_GDI_Release()
+void FFF_Capture_Screen_Thread::Callback_GDI_Release()
 {
 	if (DC_Destination)
 	{
@@ -138,7 +138,7 @@ void FFF_WinCapture_Thread::Callback_GDI_Release()
 	}
 }
 
-bool FFF_WinCapture_Thread::Callback_GDI_Buffer(FString& Error)
+bool FFF_Capture_Screen_Thread::Callback_GDI_Buffer(FString& Error)
 {
 	HDC DC_Source = GetDC(NULL);
 	if (!DC_Source)

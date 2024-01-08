@@ -9,15 +9,14 @@
 #include "HAL/RunnableThread.h"
 #include "Containers/Queue.h"
 
-// Threads
-#include "FF_WinCapture_Thread.h"
+// Custom Includes
+#include "WinInputsBPLibrary.h"
+#include "FF_Capture_Screen_Thread.h"
 
-#include "FF_WinCapture.generated.h"
-
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FDelegateWindowCapture);
+#include "FF_Capture_Screen.generated.h"
 
 UCLASS()
-class WININPUTS_API AFF_WinCapture : public AActor
+class WININPUTS_API AFF_Capture_Screen : public AActor
 {
 	GENERATED_BODY()
 	
@@ -30,7 +29,7 @@ protected:
 
 #ifdef _WIN64
 
-	class FFF_WinCapture_Thread* Thread_WinCapture = nullptr;
+	class FFF_Capture_Screen_Thread* Thread_Screen_Capture = nullptr;
 	virtual void GenerateTexture();
 
 #endif
@@ -38,23 +37,16 @@ protected:
 public:	
 
 	// Sets default values for this actor's properties
-	AFF_WinCapture();
+	AFF_Capture_Screen();
 
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
-
-public:
 
 	FString ThreadName;
 	
 	TQueue<FCapturedWindowDatas> Data_Queue;
 	
 	FCapturedWindowDatas CapturedWindowDatas;
-
-public:
-
-	UPROPERTY(BlueprintReadWrite, meta = (ToolTip = "", ExposeOnSpawn = "true"))
-	FString WindowName;
 
 	UPROPERTY(BlueprintReadWrite, meta = (ToolTip = "", ExposeOnSpawn = "true"))
 	int32 MonitorIndex = 0;
@@ -66,12 +58,15 @@ public:
 	bool bIsCaptureStarted = false;
 
 	UPROPERTY(BlueprintAssignable)
-	FDelegateWindowCapture DelegateWindowCapture;
+	FDelegateDesktopCapture DelegateScreenCapture;
 
 	UFUNCTION(BlueprintCallable)
-	virtual bool Window_Capture_Start();
+	virtual bool Screen_Capture_Start();
 
 	UFUNCTION(BlueprintCallable)
-	virtual void Window_Capture_Stop();
+	virtual void Screen_Capture_Stop();
+
+	UFUNCTION(BlueprintCallable)
+	virtual bool Screen_Capture_Toggle(bool bIsPause);
 
 };

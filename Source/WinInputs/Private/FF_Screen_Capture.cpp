@@ -1,31 +1,31 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-#include "FF_WinCapture.h"
+#include "FF_Capture_Screen.h"
 
 // Sets default values
-AFF_WinCapture::AFF_WinCapture()
+AFF_Capture_Screen::AFF_Capture_Screen()
 {
 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	this->PrimaryActorTick.bCanEverTick = true;
 }
 
 // Called when the game starts or when spawned
-void AFF_WinCapture::BeginPlay()
+void AFF_Capture_Screen::BeginPlay()
 {
 	Super::BeginPlay();
 }
 
-void AFF_WinCapture::EndPlay(const EEndPlayReason::Type EndPlayReason)
+void AFF_Capture_Screen::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 #ifdef _WIN64
-	this->Window_Capture_Stop();
+	this->Screen_Capture_Stop();
 #endif
 
 	Super::EndPlay(EndPlayReason);
 }
 
 // Called every frame
-void AFF_WinCapture::Tick(float DeltaTime)
+void AFF_Capture_Screen::Tick(float DeltaTime)
 {
 #ifdef _WIN64
 
@@ -38,20 +38,15 @@ void AFF_WinCapture::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 }
 
-bool AFF_WinCapture::Window_Capture_Start()
+bool AFF_Capture_Screen::Screen_Capture_Start()
 {
-	if (this->WindowName.IsEmpty())
-	{
-		return false;
-	}
-
 	this->ThreadName = "Thread_WinCap_" + FString::FromInt(FMath::RandRange(0, 9999));
-	this->Thread_WinCapture = new FFF_WinCapture_Thread(this);
+	this->Thread_Screen_Capture = new FFF_Capture_Screen_Thread(this);
 
-	if (!this->Thread_WinCapture)
+	if (!this->Thread_Screen_Capture)
 	{
 		this->ThreadName = "";
-		delete this->Thread_WinCapture;
+		delete this->Thread_Screen_Capture;
 		return false;
 	}
 
@@ -60,18 +55,32 @@ bool AFF_WinCapture::Window_Capture_Start()
 	return true;
 }
 
-void AFF_WinCapture::Window_Capture_Stop()
+void AFF_Capture_Screen::Screen_Capture_Stop()
 {
-	if (this->Thread_WinCapture)
+	if (this->Thread_Screen_Capture)
 	{
 		this->bIsCaptureStarted = false;
-		delete this->Thread_WinCapture;
+		delete this->Thread_Screen_Capture;
 	}
 
 	this->CapturedTexture->ReleaseResource();
 }
 
-void AFF_WinCapture::GenerateTexture()
+bool AFF_Capture_Screen::Screen_Capture_Toggle(bool bIsPause)
+{
+	if (Thread_Screen_Capture)
+	{
+		Thread_Screen_Capture->Toggle(bIsPause);
+		return true;
+	}
+
+	else
+	{
+		return false;
+	}
+}
+
+void AFF_Capture_Screen::GenerateTexture()
 {
 	if (!this->Data_Queue.Dequeue(CapturedWindowDatas))
 	{
@@ -100,7 +109,7 @@ void AFF_WinCapture::GenerateTexture()
 		const auto Region = new FUpdateTextureRegion2D(0, 0, 0, 0, CapturedWindowDatas.Resolution.X, CapturedWindowDatas.Resolution.Y);
 		this->CapturedTexture->UpdateTextureRegions(0, 1, Region, 4 * CapturedWindowDatas.Resolution.X, 4, CapturedWindowDatas.Buffer);
 
-		DelegateWindowCapture.Broadcast();
+		DelegateScreenCapture.Broadcast();
 		
 		return;
 	}

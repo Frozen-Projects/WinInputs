@@ -18,7 +18,7 @@ THIRD_PARTY_INCLUDES_END
 
 // Fordward Declerations.
 class FRunnableThread;
-class AFF_WinCapture;
+class AFF_Capture_Screen;
 
 struct FCapturedWindowDatas
 {
@@ -45,15 +45,15 @@ public:
 	}
 };
 
-class FFF_WinCapture_Thread : public FRunnable
+class FFF_Capture_Screen_Thread : public FRunnable
 {
 	
 public:	
 	// Sets default values for this actor's properties
-	FFF_WinCapture_Thread(AFF_WinCapture* In_Parent_Actor);
+	FFF_Capture_Screen_Thread(AFF_Capture_Screen* In_Parent_Actor);
 
 	// Destructor.
-	virtual ~FFF_WinCapture_Thread() override;
+	virtual ~FFF_Capture_Screen_Thread() override;
 
 	virtual bool Init() override;
 
@@ -67,7 +67,7 @@ protected:
 	
 	bool bStartThread = false;
 	FRunnableThread* RunnableThread = nullptr;
-	AFF_WinCapture* ParentActor = nullptr;
+	AFF_Capture_Screen* ParentActor = nullptr;
 
 private:
 
