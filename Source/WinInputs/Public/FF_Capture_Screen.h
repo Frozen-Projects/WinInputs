@@ -51,6 +51,9 @@ public:
 	UPROPERTY(BlueprintReadWrite, meta = (ToolTip = "", ExposeOnSpawn = "true"))
 	int32 MonitorIndex = 0;
 
+	UPROPERTY(BlueprintReadWrite, meta = (ToolTip = "", ExposeOnSpawn = "true"))
+	bool bShowCursor = true;
+
 	UPROPERTY(BlueprintReadOnly)
 	UTexture2D* CapturedTexture = nullptr;
 

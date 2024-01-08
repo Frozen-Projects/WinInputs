@@ -6,12 +6,14 @@
 
 // UE Includes.
 #include "HAL/Runnable.h"
+#include "GenericPlatform/GenericApplication.h"		// Get monitor infos to select.
 
 THIRD_PARTY_INCLUDES_START
 #ifdef _WIN64
 #include "Windows/AllowWindowsPlatformTypes.h"
 #include "Windows/WindowsHWrapper.h"
 #include <WinUser.h>
+#include "wingdi.h"
 #include "Windows/HideWindowsPlatformTypes.h"
 #endif
 THIRD_PARTY_INCLUDES_END
@@ -71,14 +73,21 @@ protected:
 
 private:
 
-	HDC DC_Destination = NULL;
-	HBITMAP CapturedBitmap = NULL;
+	// UPROPERTY from Actor Class.
 	int32 MonitorIndex = 0;
 
+	// UPROPERTY from Actor Class.
+	bool bShowCursor = true;
+
+	HDC DC_Destination = NULL;
+	HBITMAP CapturedBitmap = NULL;
+
+	FMonitorInfo TargetMonitorInfo;
 	FCapturedWindowDatas CapturedDatas;
 
 	virtual bool Callback_GDI_Init(FString& Error);
 	virtual void Callback_GDI_Release();
 	virtual bool Callback_GDI_Buffer(FString& Error);
+	virtual void Callback_Cursor_Draw();
 
 };

@@ -64,6 +64,7 @@ void AFF_Capture_Screen::Screen_Capture_Stop()
 	}
 
 	this->CapturedTexture->ReleaseResource();
+	this->Data_Queue.Empty();
 }
 
 bool AFF_Capture_Screen::Screen_Capture_Toggle(bool bIsPause)

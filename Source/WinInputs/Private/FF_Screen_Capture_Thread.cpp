@@ -3,9 +3,6 @@
 #include "FF_Capture_Screen_Thread.h"
 #include "FF_Capture_Screen.h"
 
-// UE Includes.
-#include "GenericPlatform/GenericApplication.h"		// Get monitor infos to select.
-
 FFF_Capture_Screen_Thread::FFF_Capture_Screen_Thread(AFF_Capture_Screen* In_Parent_Actor)
 {
 	if (In_Parent_Actor)
@@ -48,6 +45,8 @@ bool FFF_Capture_Screen_Thread::Init()
 		return false;
 	}
 
+	this->bShowCursor = this->ParentActor->bShowCursor;
+
 	this->bStartThread = true;
 	return true;
 }
@@ -89,11 +88,12 @@ bool FFF_Capture_Screen_Thread::Callback_GDI_Init(FString& Error)
 {
 	FDisplayMetrics Display;
 	FDisplayMetrics::RebuildDisplayMetrics(Display);
+	TargetMonitorInfo = Display.MonitorInfo[MonitorIndex];
 
-	CapturedDatas.ScreenStart.X = Display.MonitorInfo[MonitorIndex].WorkArea.Left;
-	CapturedDatas.ScreenStart.Y = Display.MonitorInfo[MonitorIndex].WorkArea.Top;
-	CapturedDatas.Resolution.X = Display.MonitorInfo[MonitorIndex].DisplayRect.Right - Display.MonitorInfo[MonitorIndex].DisplayRect.Left;
-	CapturedDatas.Resolution.Y = Display.MonitorInfo[MonitorIndex].DisplayRect.Bottom - Display.MonitorInfo[MonitorIndex].DisplayRect.Top;
+	CapturedDatas.ScreenStart.X = TargetMonitorInfo.WorkArea.Left;
+	CapturedDatas.ScreenStart.Y = TargetMonitorInfo.WorkArea.Top;
+	CapturedDatas.Resolution.X = TargetMonitorInfo.DisplayRect.Right - TargetMonitorInfo.DisplayRect.Left;
+	CapturedDatas.Resolution.Y = TargetMonitorInfo.DisplayRect.Bottom - TargetMonitorInfo.DisplayRect.Top;
 	CapturedDatas.BufferSize = CapturedDatas.Resolution.X * CapturedDatas.Resolution.Y * sizeof(FColor);
 
 	DC_Destination = CreateCompatibleDC(NULL);
@@ -147,8 +147,37 @@ bool FFF_Capture_Screen_Thread::Callback_GDI_Buffer(FString& Error)
 		return false;
 	}
 
+	if (bShowCursor)
+	{
+		this->Callback_Cursor_Draw();
+	}
+
 	BitBlt(DC_Destination, 0, 0, CapturedDatas.Resolution.X, CapturedDatas.Resolution.Y, DC_Source, CapturedDatas.ScreenStart.X, CapturedDatas.ScreenStart.Y, SRCCOPY);
 	ReleaseDC(NULL, DC_Source);
 
 	return true;
+}
+
+void FFF_Capture_Screen_Thread::Callback_Cursor_Draw()
+{
+	CURSORINFO cursor_info;
+	memset(&cursor_info, 0, sizeof(CURSORINFO));
+	cursor_info.cbSize = sizeof(CURSORINFO);
+	GetCursorInfo(&cursor_info);
+
+	if (cursor_info.flags == CURSOR_SHOWING)
+	{
+		ICONINFO icon_info;
+		memset(&icon_info, 0, sizeof(ICONINFO));
+		GetIconInfo(cursor_info.hCursor, &icon_info);
+
+		const int x = cursor_info.ptScreenPos.x - TargetMonitorInfo.DisplayRect.Left - TargetMonitorInfo.DisplayRect.Left - icon_info.xHotspot;
+		const int y = cursor_info.ptScreenPos.y - TargetMonitorInfo.DisplayRect.Top - TargetMonitorInfo.DisplayRect.Top - icon_info.yHotspot;
+
+		BITMAP bmpCursor;
+		memset(&bmpCursor, 0, sizeof(bmpCursor));
+		GetObjectA(icon_info.hbmColor, sizeof(bmpCursor), &bmpCursor);
+
+		DrawIconEx(DC_Destination, x, y, cursor_info.hCursor, bmpCursor.bmWidth, bmpCursor.bmHeight, 0, NULL, DI_NORMAL);
+	}
 }
