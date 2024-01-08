@@ -28,8 +28,38 @@ FFF_Capture_Screen_Thread::~FFF_Capture_Screen_Thread()
 
 bool FFF_Capture_Screen_Thread::Init()
 {
-	this->TargetMonitorInfo = this->ParentActor->TargetMonitorInfo;
-	this->bShowCursor = this->ParentActor->bShowCursor;
+	this->WindowName = this->ParentActor->WindowName;
+
+	if (this->WindowName.IsEmpty())
+	{
+		this->TargetMonitorInfo = this->ParentActor->TargetMonitorInfo;
+		this->bShowCursor = this->ParentActor->bShowCursor;
+
+		CapturedDatas.ScreenStart.X = TargetMonitorInfo.WorkArea.Left;
+		CapturedDatas.ScreenStart.Y = TargetMonitorInfo.WorkArea.Top;
+		CapturedDatas.Resolution.X = TargetMonitorInfo.DisplayRect.Right - TargetMonitorInfo.DisplayRect.Left;
+		CapturedDatas.Resolution.Y = TargetMonitorInfo.DisplayRect.Bottom - TargetMonitorInfo.DisplayRect.Top;
+		CapturedDatas.BufferSize = CapturedDatas.Resolution.X * CapturedDatas.Resolution.Y * sizeof(FColor);
+
+		DC_Source = GetDC(NULL);
+		DC_Destination = CreateCompatibleDC(DC_Source);
+	}
+
+	else
+	{
+		TargetWindow = FindWindowExA(NULL, NULL, NULL, TCHAR_TO_UTF8(*this->WindowName));
+		DC_Source = GetDC(TargetWindow);
+		DC_Destination = CreateCompatibleDC(DC_Source);
+
+		RECT TargetWindowRect;
+		GetWindowRect(TargetWindow, &TargetWindowRect);
+
+		CapturedDatas.ScreenStart.X = 0;
+		CapturedDatas.ScreenStart.Y = 0;
+		CapturedDatas.Resolution.X = TargetWindowRect.right - TargetWindowRect.left;
+		CapturedDatas.Resolution.Y = TargetWindowRect.bottom - TargetWindowRect.top;
+		CapturedDatas.BufferSize = CapturedDatas.Resolution.X * CapturedDatas.Resolution.Y * sizeof(FColor);
+	}
 
 	FString Error;
 	if (!this->Callback_GDI_Init(Error))
@@ -77,20 +107,12 @@ void FFF_Capture_Screen_Thread::Toggle(bool bIsPause)
 
 bool FFF_Capture_Screen_Thread::Callback_GDI_Init(FString& Error)
 {
-	CapturedDatas.ScreenStart.X = TargetMonitorInfo.WorkArea.Left;
-	CapturedDatas.ScreenStart.Y = TargetMonitorInfo.WorkArea.Top;
-	CapturedDatas.Resolution.X = TargetMonitorInfo.DisplayRect.Right - TargetMonitorInfo.DisplayRect.Left;
-	CapturedDatas.Resolution.Y = TargetMonitorInfo.DisplayRect.Bottom - TargetMonitorInfo.DisplayRect.Top;
-	CapturedDatas.BufferSize = CapturedDatas.Resolution.X * CapturedDatas.Resolution.Y * sizeof(FColor);
-
-	DC_Destination = CreateCompatibleDC(NULL);
-
 	BITMAPINFO BitmapInfo;
 	memset(&BitmapInfo, 0, sizeof(BITMAPINFO));
 	BitmapInfo.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-	BitmapInfo.bmiHeader.biWidth = CapturedDatas.Resolution.X;
 	BitmapInfo.bmiHeader.biPlanes = 1;
 	BitmapInfo.bmiHeader.biCompression = BI_RGB;
+	BitmapInfo.bmiHeader.biWidth = CapturedDatas.Resolution.X;
 
 	// We need to flip up right.
 	BitmapInfo.bmiHeader.biHeight = -CapturedDatas.Resolution.Y;
@@ -119,6 +141,12 @@ void FFF_Capture_Screen_Thread::Callback_GDI_Release()
 		DeleteDC(DC_Destination);
 	}
 
+	if (DC_Source)
+	{
+		ReleaseDC(NULL, DC_Source);
+		DeleteDC(DC_Source);
+	}
+
 	if (CapturedBitmap)
 	{
 		DeleteObject(CapturedBitmap);
@@ -127,20 +155,17 @@ void FFF_Capture_Screen_Thread::Callback_GDI_Release()
 
 bool FFF_Capture_Screen_Thread::Callback_GDI_Buffer(FString& Error)
 {
-	HDC DC_Source = GetDC(NULL);
-	if (!DC_Source)
-	{
-		Error = "Unable to get source DC";
-		return false;
-	}
-
 	if (bShowCursor)
 	{
 		this->Callback_Cursor_Draw();
 	}
 
+	if (!this->WindowName.IsEmpty())
+	{
+		PrintWindow(TargetWindow, DC_Source, 2);
+	}
+
 	BitBlt(DC_Destination, 0, 0, CapturedDatas.Resolution.X, CapturedDatas.Resolution.Y, DC_Source, CapturedDatas.ScreenStart.X, CapturedDatas.ScreenStart.Y, SRCCOPY);
-	ReleaseDC(NULL, DC_Source);
 
 	return true;
 }

@@ -73,14 +73,22 @@ protected:
 private:
 
 	// UPROPERTY from Actor Class.
-	bool bShowCursor = true;
+	FString WindowName;
+
+	// UPROPERTY from Actor Class.
+	bool bShowCursor = false;
 
 	// Comes from Actor Class.
 	FMonitorInfo TargetMonitorInfo;
 
 #ifdef _WIN64
+
+	HWND TargetWindow = NULL;
+
+	HDC DC_Source = NULL;
 	HDC DC_Destination = NULL;
 	HBITMAP CapturedBitmap = NULL;
+
 #endif
 
 	FCapturedWindowDatas CapturedDatas;
