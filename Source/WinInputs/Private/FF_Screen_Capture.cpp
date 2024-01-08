@@ -68,7 +68,11 @@ void AFF_Capture_Screen::Screen_Capture_Stop()
 		delete this->Thread_Screen_Capture;
 	}
 
-	this->CapturedTexture->ReleaseResource();
+	if (this->CapturedTexture)
+	{
+		this->CapturedTexture->ReleaseResource();
+	}
+
 	this->Data_Queue.Empty();
 }
 

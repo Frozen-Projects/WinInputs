@@ -151,20 +151,20 @@ void FFF_Capture_Screen_Thread::Callback_Cursor_Draw()
 	memset(&cursor_info, 0, sizeof(CURSORINFO));
 	cursor_info.cbSize = sizeof(CURSORINFO);
 	GetCursorInfo(&cursor_info);
-
+	 
 	if (cursor_info.flags == CURSOR_SHOWING)
 	{
 		ICONINFO icon_info;
 		memset(&icon_info, 0, sizeof(ICONINFO));
 		GetIconInfo(cursor_info.hCursor, &icon_info);
-
-		const int x = cursor_info.ptScreenPos.x - TargetMonitorInfo.DisplayRect.Left - TargetMonitorInfo.DisplayRect.Left - icon_info.xHotspot;
-		const int y = cursor_info.ptScreenPos.y - TargetMonitorInfo.DisplayRect.Top - TargetMonitorInfo.DisplayRect.Top - icon_info.yHotspot;
+		
+		const int x = (cursor_info.ptScreenPos.x - TargetMonitorInfo.DisplayRect.Left - TargetMonitorInfo.DisplayRect.Left - icon_info.xHotspot) + TargetMonitorInfo.DisplayRect.Left;
+		const int y = (cursor_info.ptScreenPos.y - TargetMonitorInfo.DisplayRect.Top - TargetMonitorInfo.DisplayRect.Top - icon_info.yHotspot) + TargetMonitorInfo.DisplayRect.Top;
 
 		BITMAP bmpCursor;
 		memset(&bmpCursor, 0, sizeof(bmpCursor));
 		GetObjectA(icon_info.hbmColor, sizeof(bmpCursor), &bmpCursor);
-
+		
 		DrawIconEx(DC_Destination, x, y, cursor_info.hCursor, bmpCursor.bmWidth, bmpCursor.bmHeight, 0, NULL, DI_NORMAL);
 	}
 }
