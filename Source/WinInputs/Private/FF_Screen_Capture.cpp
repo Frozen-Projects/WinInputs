@@ -40,6 +40,11 @@ void AFF_Capture_Screen::Tick(float DeltaTime)
 
 bool AFF_Capture_Screen::Screen_Capture_Start()
 {
+	FDisplayMetrics Display;
+	FDisplayMetrics::RebuildDisplayMetrics(Display);
+	MonitorIndex = FMath::Clamp(MonitorIndex, 0, Display.MonitorInfo.Num() - 1);
+	TargetMonitorInfo = Display.MonitorInfo[MonitorIndex];
+
 	this->ThreadName = "Thread_WinCap_" + FString::FromInt(FMath::RandRange(0, 9999));
 	this->Thread_Screen_Capture = new FFF_Capture_Screen_Thread(this);
 

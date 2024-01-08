@@ -8,6 +8,7 @@
 // UE Includes
 #include "HAL/RunnableThread.h"
 #include "Containers/Queue.h"
+#include "GenericPlatform/GenericApplication.h"		// Get monitor infos to select.
 
 // Custom Includes
 #include "WinInputsBPLibrary.h"
@@ -43,10 +44,11 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 	FString ThreadName;
-	
 	TQueue<FCapturedWindowDatas> Data_Queue;
-	
+	FMonitorInfo TargetMonitorInfo;
 	FCapturedWindowDatas CapturedWindowDatas;
+
+public:
 
 	UPROPERTY(BlueprintReadWrite, meta = (ToolTip = "", ExposeOnSpawn = "true"))
 	int32 MonitorIndex = 0;

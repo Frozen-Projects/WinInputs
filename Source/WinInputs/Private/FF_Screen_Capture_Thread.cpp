@@ -28,24 +28,15 @@ FFF_Capture_Screen_Thread::~FFF_Capture_Screen_Thread()
 
 bool FFF_Capture_Screen_Thread::Init()
 {
-	if (this->ParentActor->MonitorIndex < 0)
-	{
-		this->MonitorIndex = 0;
-	}
+	this->TargetMonitorInfo = this->ParentActor->TargetMonitorInfo;
+	this->bShowCursor = this->ParentActor->bShowCursor;
 
-	else
-	{
-		this->MonitorIndex = this->ParentActor->MonitorIndex;
-	}
-	
 	FString Error;
 	if (!this->Callback_GDI_Init(Error))
 	{
 		UE_LOG(LogTemp, Warning, TEXT("%s"), *FString(Error));
 		return false;
 	}
-
-	this->bShowCursor = this->ParentActor->bShowCursor;
 
 	this->bStartThread = true;
 	return true;
@@ -86,10 +77,6 @@ void FFF_Capture_Screen_Thread::Toggle(bool bIsPause)
 
 bool FFF_Capture_Screen_Thread::Callback_GDI_Init(FString& Error)
 {
-	FDisplayMetrics Display;
-	FDisplayMetrics::RebuildDisplayMetrics(Display);
-	TargetMonitorInfo = Display.MonitorInfo[MonitorIndex];
-
 	CapturedDatas.ScreenStart.X = TargetMonitorInfo.WorkArea.Left;
 	CapturedDatas.ScreenStart.Y = TargetMonitorInfo.WorkArea.Top;
 	CapturedDatas.Resolution.X = TargetMonitorInfo.DisplayRect.Right - TargetMonitorInfo.DisplayRect.Left;
