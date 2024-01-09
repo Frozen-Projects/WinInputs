@@ -23,11 +23,7 @@
 			"Type": "Runtime",
 			"LoadingPhase": "PreLoadingScreen",
 			"PlatformAllowList": [
-				"Win64",
-				"Mac",
-				"Linux",
-				"Android",
-				"IOS"
+				"Win64"
 			]
 		}
 	]
