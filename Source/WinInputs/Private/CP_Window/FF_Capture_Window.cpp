@@ -75,6 +75,8 @@ bool AFF_Capture_Window::Window_Capture_Start()
 
 	this->bIsCaptureStarted = true;
 
+	// https://stackoverflow.com/questions/40005240/checking-if-another-window-is-closed-c
+
 	return true;
 #else
 	return false;
