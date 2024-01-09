@@ -6,6 +6,46 @@
 #include "Inputs.h"
 #include "WinInputsBPLibrary.generated.h"
 
+THIRD_PARTY_INCLUDES_START
+#ifdef _WIN64
+#include "Windows/AllowWindowsPlatformTypes.h"
+#include "Windows/WindowsHWrapper.h"
+#include <WinUser.h>
+#include "wingdi.h"
+#include "Windows/HideWindowsPlatformTypes.h"
+#endif
+THIRD_PARTY_INCLUDES_END
+
+// This is not for blueprints.
+struct FCapturedData
+{
+
+public:
+
+	uint8* Buffer = nullptr;
+	size_t BufferSize = 0;
+	FVector2D Resolution;
+
+	// Only available for screen capture.
+	FVector2D ScreenStart;
+	
+	// Only available for window capture.
+	FVector2D WindowLocation;
+
+	bool IsDataValid()
+	{
+		if (Buffer && BufferSize > 0 && Resolution.X > 0 && Resolution.Y > 0)
+		{
+			return true;
+		}
+
+		else
+		{
+			return false;
+		}
+	}
+};
+
 USTRUCT(BlueprintType)
 struct WININPUTS_API FWinInfos
 {
@@ -26,8 +66,6 @@ public:
 		FVector2D WinSize;
 
 };
-
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FDelegateDesktopCapture);
 
 UCLASS()
 class UWinInputsBPLibrary : public UBlueprintFunctionLibrary
