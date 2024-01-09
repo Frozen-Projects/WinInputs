@@ -107,13 +107,13 @@ void AFF_Capture_Screen::GenerateTexture()
 	FCapturedData EachData;
 	if (!this->Data_Queue.Dequeue(EachData))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("There is a problem to dequeue captured window datas."));
+		UE_LOG(LogTemp, Warning, TEXT("There is a problem to dequeue captured window data."));
 		return;
 	}
 
 	if (!EachData.IsDataValid())
 	{
-		// We don't need old datas.
+		// We don't need old data if dequeued buffer is invalid.
 		this->Data_Queue.Empty();
 
 		UE_LOG(LogTemp, Warning, TEXT("Captured window buffer is invalid."));
@@ -135,6 +135,7 @@ void AFF_Capture_Screen::GenerateTexture()
 		const auto Region = new FUpdateTextureRegion2D(0, 0, 0, 0, EachData.Resolution.X, EachData.Resolution.Y);
 		this->CapturedTexture->UpdateTextureRegions(0, 1, Region, 4 * EachData.Resolution.X, 4, EachData.Buffer);
 
+		// We don't need old data after updating texture.
 		this->Data_Queue.Empty();
 
 		DelegateCaptureScreen.Broadcast();

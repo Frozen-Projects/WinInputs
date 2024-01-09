@@ -10,7 +10,8 @@ FFF_Capture_Thread_Screen::FFF_Capture_Thread_Screen(AFF_Capture_Screen* In_Pare
 		this->ParentActor = In_Parent_Actor;
 	}
 
-	this->RunnableThread = FRunnableThread::Create(this, *this->ParentActor->ThreadName);
+	this->ThreadName = this->ParentActor->ThreadName;
+	this->RunnableThread = FRunnableThread::Create(this, *this->ThreadName);
 }
 
 FFF_Capture_Thread_Screen::~FFF_Capture_Thread_Screen()
@@ -49,10 +50,12 @@ uint32 FFF_Capture_Thread_Screen::Run()
 	while (this->bStartThread)
 	{
 		this->Callback_GDI_Buffer();
-
 		if (!this->ParentActor->Data_Queue.Enqueue(CapturedData))
 		{
-			UE_LOG(LogTemp, Warning, TEXT("There is a problem to enqueue captured window datas."));
+			UE_LOG(LogTemp, Warning, TEXT("There is a problem to enqueue captured screen data."));
+
+			// If data queue can't accept new data, we will clear it.
+			this->ParentActor->Data_Queue.Empty();
 		}
 	}
 
@@ -74,7 +77,7 @@ void FFF_Capture_Thread_Screen::Toggle(bool bIsPause)
 {
 	if (this->RunnableThread)
 	{
-		this->RunnableThread->Suspend();
+		this->RunnableThread->Suspend(bIsPause);
 	}
 }
 
@@ -149,12 +152,14 @@ void FFF_Capture_Thread_Screen::Callback_GDI_Release()
 void FFF_Capture_Thread_Screen::Callback_GDI_Buffer()
 {
 #ifdef _WIN64
+	
 	if (bShowCursor)
 	{
 		this->Callback_Cursor_Draw();
 	}
 
 	BitBlt(DC_Destination, 0, 0, CapturedData.Resolution.X, CapturedData.Resolution.Y, DC_Source, CapturedData.ScreenStart.X, CapturedData.ScreenStart.Y, SRCCOPY);
+
 #endif
 }
 

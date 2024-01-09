@@ -123,13 +123,13 @@ void AFF_Capture_Window::GenerateTexture()
 	FCapturedData EachData;
 	if (!this->Data_Queue.Dequeue(EachData))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("There is a problem to dequeue captured window datas."));
+		UE_LOG(LogTemp, Warning, TEXT("There is a problem to dequeue captured window data."));
 		return;
 	}
 
 	if (!EachData.IsDataValid())
 	{
-		// We don't need old datas.
+		// We don't need old data if dequeued buffer is invalid.
 		this->Data_Queue.Empty();
 
 		UE_LOG(LogTemp, Warning, TEXT("Captured window buffer is invalid."));
@@ -138,19 +138,14 @@ void AFF_Capture_Window::GenerateTexture()
 
 	if (!this->CapturedTexture || LastResolution != EachData.Resolution)
 	{
-		if (this->CapturedTexture)
-		{
-			this->CapturedTexture->ReleaseResource();
-		}
-
 		this->CapturedTexture = UTexture2D::CreateTransient(EachData.Resolution.X, EachData.Resolution.Y, PF_B8G8R8A8);
 		this->CapturedTexture->NeverStream = true;
 		this->CapturedTexture->CompressionSettings = TextureCompressionSettings::TC_VectorDisplacementmap;
 		this->CapturedTexture->UpdateResource();
 
 		LastResolution = FVector2D(EachData.Resolution.X, EachData.Resolution.Y);
-		
-		// We don't need old datas.
+
+		// We don't need old data after re-creating texture.
 		this->Data_Queue.Empty();
 
 		DelegateCaptureWindow.Broadcast(EachData.WindowLocation);
@@ -163,7 +158,7 @@ void AFF_Capture_Window::GenerateTexture()
 		const auto Region = new FUpdateTextureRegion2D(0, 0, 0, 0, EachData.Resolution.X, EachData.Resolution.Y);
 		this->CapturedTexture->UpdateTextureRegions(0, 1, Region, 4 * EachData.Resolution.X, 4, EachData.Buffer);
 
-		// We don't need old datas.
+		// We don't need old data after updating texture.
 		this->Data_Queue.Empty();
 
 		DelegateCaptureWindow.Broadcast(EachData.WindowLocation);

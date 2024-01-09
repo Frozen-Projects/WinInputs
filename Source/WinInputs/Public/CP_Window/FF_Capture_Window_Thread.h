@@ -37,18 +37,25 @@ protected:
 
 private:
 
+	FString ThreadName;
+
 #ifdef _WIN64
 
 	FString WindowName;
-
+	
 	HWND TargetWindow = nullptr;
-	RECT LastSize;
+	
+	RECT Rectangle_Last;
+	RECT Rectangle_Current;
 
 	HDC DC_Source = NULL;
 	HDC DC_Destination = NULL;
 	HBITMAP CapturedBitmap = NULL;
 
 #endif
+
+	// UPROPERTY from Actor Class.
+	bool bShowCursor = false;
 
 	FCapturedData CapturedData;
 
@@ -58,6 +65,9 @@ private:
 	virtual void Callback_GDI_Release();
 	virtual void Callback_GDI_Buffer();
 
-	virtual bool CompareRects(RECT Rect1, RECT Rect2);
+	virtual void Callback_Cursor_Draw();
+
+	// Check if rectangle size changed. It also updates current rectangle of target window.
+	virtual bool IsWindowSizeChanged();
 
 };

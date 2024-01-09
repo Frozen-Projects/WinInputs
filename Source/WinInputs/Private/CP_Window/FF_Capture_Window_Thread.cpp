@@ -10,7 +10,8 @@ FFF_Capture_Thread_Window::FFF_Capture_Thread_Window(AFF_Capture_Window* In_Pare
 		this->ParentActor = In_Parent_Actor;
 	}
 
-	this->RunnableThread = FRunnableThread::Create(this, *this->ParentActor->ThreadName);
+	this->ThreadName = this->ParentActor->ThreadName;
+	this->RunnableThread = FRunnableThread::Create(this, *this->ThreadName);
 }
 
 FFF_Capture_Thread_Window::~FFF_Capture_Thread_Window()
@@ -55,10 +56,7 @@ uint32 FFF_Capture_Thread_Window::Run()
 #ifdef _WIN64
 	while (this->bStartThread)
 	{
-		RECT CurrentRectangle;
-		GetWindowRect(TargetWindow, &CurrentRectangle);
-
-		if (!this->CompareRects(LastSize, CurrentRectangle))
+		if (!this->IsWindowSizeChanged())
 		{
 			FString Error;
 			if (!this->Callback_Init_Bitmap(Error, true))
@@ -66,13 +64,17 @@ uint32 FFF_Capture_Thread_Window::Run()
 				UE_LOG(LogTemp, Warning, TEXT("%s"), *FString(Error));
 			}
 
+			// If target window size changed, we need to clear data queue before continue.
 			this->ParentActor->Data_Queue.Empty();
 		}
 
 		this->Callback_GDI_Buffer();
 		if (!this->ParentActor->Data_Queue.Enqueue(CapturedData))
 		{
-			UE_LOG(LogTemp, Warning, TEXT("There is a problem to enqueue captured window datas."));
+			UE_LOG(LogTemp, Warning, TEXT("There is a problem to enqueue captured window data."));
+			
+			// If data queue can't accept new data, we will clear it.
+			this->ParentActor->Data_Queue.Empty();
 		}
 	}
 
@@ -85,7 +87,7 @@ uint32 FFF_Capture_Thread_Window::Run()
 void FFF_Capture_Thread_Window::Stop()
 {
 	this->bStartThread = false;
-
+	
 #ifdef _WIN64
 	this->Callback_GDI_Release();
 #endif
@@ -95,7 +97,7 @@ void FFF_Capture_Thread_Window::Toggle(bool bIsPause)
 {
 	if (this->RunnableThread)
 	{
-		this->RunnableThread->Suspend();
+		this->RunnableThread->Suspend(bIsPause);
 	}
 }
 
@@ -106,14 +108,22 @@ bool FFF_Capture_Thread_Window::Callback_Init_DC(FString& Error)
 
 	if (this->WindowName.IsEmpty())
 	{
-		Error = "Window name shouldn't be emptry.";
+		Error = "Window name shouldn't be empty.";
 		return false;
 	}
 
 	TargetWindow = FindWindowExA(NULL, NULL, NULL, TCHAR_TO_UTF8(*this->WindowName));
 
+	if (!TargetWindow)
+	{
+		Error = "Window handle is invalid.";
+		return false;
+	}
+
 	DC_Source = GetDC(TargetWindow);
 	DC_Destination = CreateCompatibleDC(DC_Source);
+
+	this->bShowCursor = this->ParentActor->bShowCursor;
 
 	return true;
 #else
@@ -129,10 +139,10 @@ bool FFF_Capture_Thread_Window::Callback_Init_Bitmap(FString& Error, bool bReIni
 		DeleteObject(CapturedBitmap);
 	}
 
-	GetWindowRect(TargetWindow, &LastSize);
+	GetWindowRect(TargetWindow, &Rectangle_Last);
 
-	CapturedData.Resolution.X = LastSize.right - LastSize.left;
-	CapturedData.Resolution.Y = LastSize.bottom - LastSize.top;
+	CapturedData.Resolution.X = Rectangle_Last.right - Rectangle_Last.left;
+	CapturedData.Resolution.Y = Rectangle_Last.bottom - Rectangle_Last.top;
 	CapturedData.BufferSize = CapturedData.Resolution.X * CapturedData.Resolution.Y * sizeof(FColor);
 
 	// Only available for screen capture.
@@ -195,7 +205,7 @@ void FFF_Capture_Thread_Window::Callback_GDI_Buffer()
 {
 #ifdef _WIN64
 
-	// We need to copy window buffer and get its position continuesly. So, we can use this thread.
+	// We need to copy window buffer and get its position continuously. So, we can use this thread.
 
 	RECT PositionRect;
 	GetWindowRect(TargetWindow, &PositionRect);
@@ -206,20 +216,58 @@ void FFF_Capture_Thread_Window::Callback_GDI_Buffer()
 	// Actual buffer functions.
 
 	PrintWindow(TargetWindow, DC_Source, 2);	// We additionally need this function to view window.
+
+	if (bShowCursor)
+	{
+		this->Callback_Cursor_Draw();
+	}
+
 	BitBlt(DC_Destination, 0, 0, CapturedData.Resolution.X, CapturedData.Resolution.Y, DC_Source, CapturedData.ScreenStart.X, CapturedData.ScreenStart.Y, SRCCOPY);
+
 #endif
 }
 
-bool FFF_Capture_Thread_Window::CompareRects(RECT Old, RECT New)
+void FFF_Capture_Thread_Window::Callback_Cursor_Draw()
 {
 #ifdef _WIN64
+	
+	CURSORINFO cursor_info;
+	memset(&cursor_info, 0, sizeof(CURSORINFO));
+	cursor_info.cbSize = sizeof(CURSORINFO);
+	GetCursorInfo(&cursor_info);
+
+	if (cursor_info.flags == CURSOR_SHOWING)
+	{
+		ICONINFO icon_info;
+		memset(&icon_info, 0, sizeof(ICONINFO));
+		GetIconInfo(cursor_info.hCursor, &icon_info);
+
+		const int x = (cursor_info.ptScreenPos.x - Rectangle_Current.left - Rectangle_Current.left - icon_info.xHotspot) + Rectangle_Current.left;
+		const int y = (cursor_info.ptScreenPos.y - Rectangle_Current.top - Rectangle_Current.top - icon_info.yHotspot) + Rectangle_Current.top;
+
+		BITMAP bmpCursor;
+		memset(&bmpCursor, 0, sizeof(bmpCursor));
+		GetObjectA(icon_info.hbmColor, sizeof(bmpCursor), &bmpCursor);
+
+		DrawIconEx(DC_Destination, x, y, cursor_info.hCursor, bmpCursor.bmWidth, bmpCursor.bmHeight, 0, NULL, DI_NORMAL);
+	}
+
+#endif
+}
+
+bool FFF_Capture_Thread_Window::IsWindowSizeChanged()
+{
+#ifdef _WIN64
+
+	GetWindowRect(TargetWindow, &Rectangle_Current);
+
 	FVector2D Size_Last;
-	Size_Last.X = Old.right - Old.left;
-	Size_Last.Y = Old.bottom - Old.top;
+	Size_Last.X = Rectangle_Last.right - Rectangle_Last.left;
+	Size_Last.Y = Rectangle_Last.bottom - Rectangle_Last.top;
 
 	FVector2D Size_Current;
-	Size_Current.X = New.right - New.left;
-	Size_Current.Y = New.bottom - New.top;
+	Size_Current.X = Rectangle_Current.right - Rectangle_Current.left;
+	Size_Current.Y = Rectangle_Current.bottom - Rectangle_Current.top;
 
 	if (Size_Last == Size_Current)
 	{

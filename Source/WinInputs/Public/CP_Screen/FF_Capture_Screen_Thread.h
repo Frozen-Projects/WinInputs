@@ -35,6 +35,8 @@ protected:
 	FRunnableThread* RunnableThread = nullptr;
 	AFF_Capture_Screen* ParentActor = nullptr;
 
+	FString ThreadName;
+
 private:
 
 	// UPROPERTY from Actor Class.

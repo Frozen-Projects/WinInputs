@@ -53,6 +53,9 @@ public:
 	UPROPERTY(BlueprintReadWrite, meta = (ToolTip = "", ExposeOnSpawn = "true"))
 	FString WindowName;
 
+	UPROPERTY(BlueprintReadWrite, meta = (ToolTip = "", ExposeOnSpawn = "true"))
+	bool bShowCursor = false;
+
 	UPROPERTY(BlueprintReadOnly)
 	UTexture2D* CapturedTexture = nullptr;
 
