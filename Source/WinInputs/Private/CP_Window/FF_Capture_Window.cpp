@@ -2,19 +2,22 @@
 
 #include "CP_Window/FF_Capture_Window.h"
 
-// Sets default values
-AFF_Capture_Window::AFF_Capture_Window()
+FString Global_WindowName;
+
+// Sets default values.
+AFF_Capture_Window::AFF_Capture_Window() : Data_Queue(1024)
 {
 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	this->PrimaryActorTick.bCanEverTick = true;
+	this->PrimaryActorTick.bCanEverTick = false;
 }
 
-// Called when the game starts or when spawned
+// Called when the game starts or when spawned.
 void AFF_Capture_Window::BeginPlay()
 {
 	Super::BeginPlay();
 }
 
+// Called when the game finished or when destroyed.
 void AFF_Capture_Window::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 #ifdef _WIN64
@@ -24,7 +27,7 @@ void AFF_Capture_Window::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	Super::EndPlay(EndPlayReason);
 }
 
-// Called every frame
+// Called every frame.
 void AFF_Capture_Window::Tick(float DeltaTime)
 {
 #ifdef _WIN64
@@ -40,65 +43,28 @@ void AFF_Capture_Window::Tick(float DeltaTime)
 
 bool AFF_Capture_Window::Window_Capture_Start()
 {
-#ifdef _WIN64
-	if (this->WindowName.IsEmpty())
+	this->Rate = FMath::Floor((1.f / 60) * 1000) / 1000;
+
+	bool bStatus = this->InitCapture();
+
+	//this->WindowHook();
+
+	if (bIsCaptureStarted)
 	{
-		return false;
+		GEngine->GetCurrentPlayWorld()->GetTimerManager().SetTimer(Timer_Handle_Capture, this, &AFF_Capture_Window::GenerateTexture, this->Rate, true);
 	}
 
-	HWND TargetWindow = FindWindowExA(NULL, NULL, NULL, TCHAR_TO_UTF8(*this->WindowName));
-
-	if (!TargetWindow)
-	{
-		return false;
-	}
-	
-	DWORD TargetWindowProcessId = GetWindowThreadProcessId(TargetWindow, NULL);
-
-	if (TargetWindowProcessId == 0)
-	{
-		return false;
-	}
-
-	this->ThreadName = "Thread_CP_WIN_" + FString::FromInt((int32)TargetWindowProcessId);
-	this->Capture_Thread_Window = new FFF_Capture_Thread_Window(this);
-
-	DeleteObject(TargetWindow);
-	TargetWindow = nullptr;
-
-	if (!this->Capture_Thread_Window)
-	{
-		this->ThreadName = "";
-		delete this->Capture_Thread_Window;
-		return false;
-	}
-
-	this->bIsCaptureStarted = true;
-
-	// https://stackoverflow.com/questions/40005240/checking-if-another-window-is-closed-c
-
-	return true;
-#else
-	return false;
-#endif
+	return bStatus;
 }
 
 void AFF_Capture_Window::Window_Capture_Stop()
 {
-#ifdef _WIN64
-	if (this->Capture_Thread_Window)
+	if (Timer_Handle_Capture.IsValid())
 	{
-		this->bIsCaptureStarted = false;
-		delete this->Capture_Thread_Window;
+		Timer_Handle_Capture.Invalidate();
 	}
 
-	if (this->CapturedTexture)
-	{
-		this->CapturedTexture->ReleaseResource();
-	}
-
-	this->Data_Queue.Empty();
-#endif
+	this->ReleaseCapture();
 }
 
 bool AFF_Capture_Window::Window_Capture_Toggle(bool bIsPause)
@@ -119,9 +85,68 @@ bool AFF_Capture_Window::Window_Capture_Toggle(bool bIsPause)
 #endif
 }
 
+bool AFF_Capture_Window::InitCapture()
+{
+#ifdef _WIN64
+	if (this->WindowName.IsEmpty())
+	{
+		return false;
+	}
+
+	HWND TargetWindow = FindWindowExA(NULL, NULL, NULL, TCHAR_TO_UTF8(*this->WindowName));
+
+	DWORD TargetWindowProcessId = GetWindowThreadProcessId(TargetWindow, NULL);
+
+	if (TargetWindowProcessId == 0)
+	{
+		return false;
+	}
+
+	Global_WindowName = WindowName;
+
+	this->ThreadName = "Thread_CP_WIN_" + FString::FromInt((int32)TargetWindowProcessId);
+	this->Capture_Thread_Window = new FFF_Capture_Thread_Window(this);
+
+	DeleteObject(TargetWindow);
+	TargetWindow = nullptr;
+
+	if (!this->Capture_Thread_Window)
+	{
+		this->ThreadName = "";
+		delete this->Capture_Thread_Window;
+		return false;
+	}
+
+	this->bIsCaptureStarted = true;
+
+	return true;
+#else
+	return false;
+#endif
+}
+
+void AFF_Capture_Window::ReleaseCapture()
+{
+#ifdef _WIN64
+	if (this->Capture_Thread_Window)
+	{
+		this->bIsCaptureStarted = false;
+		delete this->Capture_Thread_Window;
+	}
+
+	if (this->CapturedTexture)
+	{
+		this->CapturedTexture->ReleaseResource();
+	}
+
+	this->Data_Queue.Empty();
+#endif
+}
+
 void AFF_Capture_Window::GenerateTexture()
 {
 #ifdef _WIN64
+
 	FCapturedData EachData;
 	if (!this->Data_Queue.Dequeue(EachData))
 	{
@@ -131,10 +156,7 @@ void AFF_Capture_Window::GenerateTexture()
 
 	if (!EachData.IsDataValid())
 	{
-		// We don't need old data if dequeued buffer is invalid.
-		this->Data_Queue.Empty();
-
-		UE_LOG(LogTemp, Warning, TEXT("Captured window buffer is invalid."));
+		UE_LOG(LogTemp, Warning, TEXT("Captured window buffer is invalid (AFF_Capture_Window::GenerateTexture())"));
 		return;
 	}
 
@@ -147,9 +169,6 @@ void AFF_Capture_Window::GenerateTexture()
 
 		LastResolution = FVector2D(EachData.Resolution.X, EachData.Resolution.Y);
 
-		// We don't need old data after re-creating texture.
-		this->Data_Queue.Empty();
-
 		DelegateCaptureWindow.Broadcast(EachData.WindowLocation);
 
 		return;
@@ -160,11 +179,8 @@ void AFF_Capture_Window::GenerateTexture()
 		const auto Region = new FUpdateTextureRegion2D(0, 0, 0, 0, EachData.Resolution.X, EachData.Resolution.Y);
 		this->CapturedTexture->UpdateTextureRegions(0, 1, Region, 4 * EachData.Resolution.X, 4, EachData.Buffer);
 
-		// We don't need old data after updating texture.
-		this->Data_Queue.Empty();
-
 		DelegateCaptureWindow.Broadcast(EachData.WindowLocation);
-		
+
 		return;
 	}
 #endif

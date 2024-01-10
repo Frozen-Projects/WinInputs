@@ -13,6 +13,8 @@ THIRD_PARTY_INCLUDES_START
 #include <WinUser.h>
 #include "wingdi.h"
 #include "Windows/HideWindowsPlatformTypes.h"
+
+#include <mutex>
 #endif
 THIRD_PARTY_INCLUDES_END
 

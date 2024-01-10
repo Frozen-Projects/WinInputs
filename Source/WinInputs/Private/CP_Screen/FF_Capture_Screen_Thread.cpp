@@ -10,6 +10,7 @@ FFF_Capture_Thread_Screen::FFF_Capture_Thread_Screen(AFF_Capture_Screen* In_Pare
 		this->ParentActor = In_Parent_Actor;
 	}
 
+	this->SleepTime = this->ParentActor->Rate;
 	this->ThreadName = this->ParentActor->ThreadName;
 	this->RunnableThread = FRunnableThread::Create(this, *this->ThreadName);
 }
@@ -50,13 +51,6 @@ uint32 FFF_Capture_Thread_Screen::Run()
 	while (this->bStartThread)
 	{
 		this->Callback_GDI_Buffer();
-		if (!this->ParentActor->Data_Queue.Enqueue(CapturedData))
-		{
-			UE_LOG(LogTemp, Warning, TEXT("There is a problem to enqueue captured screen data."));
-
-			// If data queue can't accept new data, we will clear it.
-			this->ParentActor->Data_Queue.Empty();
-		}
 	}
 
 	return 0;
@@ -158,7 +152,38 @@ void FFF_Capture_Thread_Screen::Callback_GDI_Buffer()
 		this->Callback_Cursor_Draw();
 	}
 
+	FDisplayMetrics Display;
+	FDisplayMetrics::RebuildDisplayMetrics(Display);
+	
+	TArray<FString> MonitorIDs;
+	for (int32 Index_Monitor = 0; Index_Monitor < Display.MonitorInfo.Num(); Index_Monitor++)
+	{
+		MonitorIDs.Add(Display.MonitorInfo[Index_Monitor].ID);
+	}
+
+	if (MonitorIDs.Find(TargetMonitorInfo.ID) == INDEX_NONE)
+	{
+		std::call_once(this->Once_Flag, [this]()
+			{
+				AsyncTask(ENamedThreads::GameThread, [this]()
+					{
+						UE_LOG(LogTemp, Warning, TEXT("Target monitor disconnected."));
+						this->ParentActor->Destroy();
+					}
+				);
+			}
+		);
+
+		return;
+	}
+
 	BitBlt(DC_Destination, 0, 0, CapturedData.Resolution.X, CapturedData.Resolution.Y, DC_Source, CapturedData.ScreenStart.X, CapturedData.ScreenStart.Y, SRCCOPY);
+
+	if (!this->ParentActor->Data_Queue.Enqueue(CapturedData))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("There is a problem to enqueue captured screen data."));
+		FPlatformProcess::Sleep(this->SleepTime);
+	}
 
 #endif
 }
@@ -175,6 +200,7 @@ void FFF_Capture_Thread_Screen::Callback_Cursor_Draw()
 	{
 		ICONINFO icon_info;
 		memset(&icon_info, 0, sizeof(ICONINFO));
+		icon_info.fIcon = false;
 		GetIconInfo(cursor_info.hCursor, &icon_info);
 		
 		const int x = (cursor_info.ptScreenPos.x - TargetMonitorInfo.DisplayRect.Left - TargetMonitorInfo.DisplayRect.Left - icon_info.xHotspot) + TargetMonitorInfo.DisplayRect.Left;

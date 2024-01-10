@@ -7,7 +7,7 @@
 
 // UE Includes
 #include "HAL/RunnableThread.h"
-#include "Containers/Queue.h"
+#include "Containers/CircularQueue.h"
 #include "GenericPlatform/GenericApplication.h"		// Get monitor infos to select.
 
 // Custom Includes
@@ -31,25 +31,32 @@ protected:
 	// Called when the game finished or when destroyed.
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
-	// Called at tick.
+	// Callbacks.
+
+	virtual bool InitCapture();
+	virtual void ReleaseCapture();
 	virtual void GenerateTexture();
 
-	class FFF_Capture_Thread_Window* Capture_Thread_Window = nullptr;
 	FVector2D LastResolution;
+	FTimerHandle Timer_Handle_Capture;
+	class FFF_Capture_Thread_Window* Capture_Thread_Window = nullptr;
+
+public:
+
+	// Sets default values for this actor's properties.
+	AFF_Capture_Window();
+
+	// Called every frame.
+	virtual void Tick(float DeltaTime) override;
+
+	// Transfer Queue.
+	TCircularQueue<FCapturedData> Data_Queue = TCircularQueue<FCapturedData>(1024);
 
 public:	
 
-	// Sets default values for this actor's properties
-	AFF_Capture_Window();
-
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
-
+	float Rate = 0.f;
 	FString ThreadName;
-	TQueue<FCapturedData> Data_Queue;
 	
-public:
-
 	UPROPERTY(BlueprintReadWrite, meta = (ToolTip = "", ExposeOnSpawn = "true"))
 	FString WindowName;
 

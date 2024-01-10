@@ -3,18 +3,19 @@
 #include "CP_Screen/FF_Capture_Screen.h"
 
 // Sets default values
-AFF_Capture_Screen::AFF_Capture_Screen()
+AFF_Capture_Screen::AFF_Capture_Screen() : Data_Queue(1024)
 {
 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	this->PrimaryActorTick.bCanEverTick = true;
+	this->PrimaryActorTick.bCanEverTick = false;
 }
 
-// Called when the game starts or when spawned
+// Called when the game starts or when spawned.
 void AFF_Capture_Screen::BeginPlay()
 {
 	Super::BeginPlay();
 }
 
+// Called when the game finished or when destroyed.
 void AFF_Capture_Screen::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 #ifdef _WIN64
@@ -24,63 +25,34 @@ void AFF_Capture_Screen::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	Super::EndPlay(EndPlayReason);
 }
 
-// Called every frame
+// Called every frame.
 void AFF_Capture_Screen::Tick(float DeltaTime)
 {
-#ifdef _WIN64
-
-	if (bIsCaptureStarted)
-	{
-		this->GenerateTexture();
-	}
-
-#endif
-
 	Super::Tick(DeltaTime);
 }
 
 bool AFF_Capture_Screen::Screen_Capture_Start()
 {
-#ifdef _WIN64
-	FDisplayMetrics Display;
-	FDisplayMetrics::RebuildDisplayMetrics(Display);
-	MonitorIndex = FMath::Clamp(MonitorIndex, 0, Display.MonitorInfo.Num() - 1);
-	TargetMonitorInfo = Display.MonitorInfo[MonitorIndex];
+	this->Rate = FMath::Floor((1.f / 60) * 1000) / 1000;
+	
+	bool bStatus = this->InitCapture();
 
-	this->ThreadName = "Thread_CP_SCR_" + FString::FromInt(FMath::RandRange(0, 9999));
-	this->Capture_Thread_Screen = new FFF_Capture_Thread_Screen(this);
-
-	if (!this->Capture_Thread_Screen)
+	if (bIsCaptureStarted)
 	{
-		this->ThreadName = "";
-		delete this->Capture_Thread_Screen;
-		return false;
+		GEngine->GetCurrentPlayWorld()->GetTimerManager().SetTimer(Timer_Handle_Capture, this, &AFF_Capture_Screen::GenerateTexture, this->Rate, true);
 	}
-
-	this->bIsCaptureStarted = true;
-
-	return true;
-#else
-	return false;
-#endif
+	
+	return bStatus;
 }
 
 void AFF_Capture_Screen::Screen_Capture_Stop()
 {
-#ifdef _WIN64
-	if (this->Capture_Thread_Screen)
+	if (Timer_Handle_Capture.IsValid())
 	{
-		this->bIsCaptureStarted = false;
-		delete this->Capture_Thread_Screen;
+		Timer_Handle_Capture.Invalidate();
 	}
 
-	if (this->CapturedTexture)
-	{
-		this->CapturedTexture->ReleaseResource();
-	}
-
-	this->Data_Queue.Empty();
-#endif
+	this->ReleaseCapture();
 }
 
 bool AFF_Capture_Screen::Screen_Capture_Toggle(bool bIsPause)
@@ -101,6 +73,51 @@ bool AFF_Capture_Screen::Screen_Capture_Toggle(bool bIsPause)
 #endif
 }
 
+bool AFF_Capture_Screen::InitCapture()
+{
+#ifdef _WIN64
+	FDisplayMetrics Display;
+	FDisplayMetrics::RebuildDisplayMetrics(Display);
+	MonitorIndex = FMath::Clamp(MonitorIndex, 0, Display.MonitorInfo.Num() - 1);
+	TargetMonitorInfo = Display.MonitorInfo[MonitorIndex];
+
+	this->ThreadName = "Thread_CP_SCR_" + FString::FromInt(FMath::RandRange(0, 9999));
+	this->Capture_Thread_Screen = new FFF_Capture_Thread_Screen(this);
+
+	if (!this->Capture_Thread_Screen)
+	{
+		this->ThreadName = "";
+		delete this->Capture_Thread_Screen;
+
+		return false;
+	}
+
+	this->bIsCaptureStarted = true;
+
+	return true;
+#else
+	return false;
+#endif
+}
+
+void AFF_Capture_Screen::ReleaseCapture()
+{
+#ifdef _WIN64
+	if (this->Capture_Thread_Screen)
+	{
+		this->bIsCaptureStarted = false;
+		delete this->Capture_Thread_Screen;
+	}
+
+	if (this->CapturedTexture)
+	{
+		this->CapturedTexture->ReleaseResource();
+	}
+
+	this->Data_Queue.Empty();
+#endif
+}
+
 void AFF_Capture_Screen::GenerateTexture()
 {
 #ifdef _WIN64
@@ -113,9 +130,6 @@ void AFF_Capture_Screen::GenerateTexture()
 
 	if (!EachData.IsDataValid())
 	{
-		// We don't need old data if dequeued buffer is invalid.
-		this->Data_Queue.Empty();
-
 		UE_LOG(LogTemp, Warning, TEXT("Captured window buffer is invalid."));
 		return;
 	}
@@ -135,11 +149,8 @@ void AFF_Capture_Screen::GenerateTexture()
 		const auto Region = new FUpdateTextureRegion2D(0, 0, 0, 0, EachData.Resolution.X, EachData.Resolution.Y);
 		this->CapturedTexture->UpdateTextureRegions(0, 1, Region, 4 * EachData.Resolution.X, 4, EachData.Buffer);
 
-		// We don't need old data after updating texture.
-		this->Data_Queue.Empty();
-
 		DelegateCaptureScreen.Broadcast();
-		
+
 		return;
 	}
 #endif

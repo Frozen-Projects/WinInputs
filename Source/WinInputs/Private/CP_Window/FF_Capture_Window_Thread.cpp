@@ -10,6 +10,7 @@ FFF_Capture_Thread_Window::FFF_Capture_Thread_Window(AFF_Capture_Window* In_Pare
 		this->ParentActor = In_Parent_Actor;
 	}
 
+	this->SleepTime = this->ParentActor->Rate;
 	this->ThreadName = this->ParentActor->ThreadName;
 	this->RunnableThread = FRunnableThread::Create(this, *this->ThreadName);
 }
@@ -69,13 +70,6 @@ uint32 FFF_Capture_Thread_Window::Run()
 		}
 
 		this->Callback_GDI_Buffer();
-		if (!this->ParentActor->Data_Queue.Enqueue(CapturedData))
-		{
-			UE_LOG(LogTemp, Warning, TEXT("There is a problem to enqueue captured window data."));
-			
-			// If data queue can't accept new data, we will clear it.
-			this->ParentActor->Data_Queue.Empty();
-		}
 	}
 
 	return 0;
@@ -144,10 +138,6 @@ bool FFF_Capture_Thread_Window::Callback_Init_Bitmap(FString& Error, bool bReIni
 	CapturedData.Resolution.X = Rectangle_Last.right - Rectangle_Last.left;
 	CapturedData.Resolution.Y = Rectangle_Last.bottom - Rectangle_Last.top;
 	CapturedData.BufferSize = CapturedData.Resolution.X * CapturedData.Resolution.Y * sizeof(FColor);
-
-	// Only available for screen capture.
-	CapturedData.ScreenStart.X = 0;
-	CapturedData.ScreenStart.Y = 0;
 	
 	BITMAPINFO BitmapInfo;
 	memset(&BitmapInfo, 0, sizeof(BITMAPINFO));
@@ -215,14 +205,36 @@ void FFF_Capture_Thread_Window::Callback_GDI_Buffer()
 
 	// Actual buffer functions.
 
-	PrintWindow(TargetWindow, DC_Source, 2);	// We additionally need this function to view window.
-
 	if (bShowCursor)
 	{
 		this->Callback_Cursor_Draw();
 	}
 
-	BitBlt(DC_Destination, 0, 0, CapturedData.Resolution.X, CapturedData.Resolution.Y, DC_Source, CapturedData.ScreenStart.X, CapturedData.ScreenStart.Y, SRCCOPY);
+	PrintWindow(TargetWindow, DC_Source, 2);
+
+	bool bIsCaptureResult = BitBlt(DC_Destination, 0, 0, CapturedData.Resolution.X, CapturedData.Resolution.Y, DC_Source, CapturedData.ScreenStart.X, CapturedData.ScreenStart.Y, SRCCOPY);
+
+	if (!bIsCaptureResult)
+	{
+		std::call_once(this->Once_Flag, [this]() 
+			{ 
+				AsyncTask(ENamedThreads::GameThread, [this]()
+					{
+						UE_LOG(LogTemp, Warning, TEXT("There is a problem with \"BitBlt\" function on CaptureThread->Callback_GDI_Buffer. Probably target window closed."));
+						this->ParentActor->Destroy();
+					}
+				);
+			}
+		);
+		
+		return;
+	}
+
+	if (!this->ParentActor->Data_Queue.Enqueue(CapturedData))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("There is a problem to enqueue captured window data."));
+		FPlatformProcess::Sleep(this->SleepTime);
+	}
 
 #endif
 }
@@ -239,6 +251,7 @@ void FFF_Capture_Thread_Window::Callback_Cursor_Draw()
 	if (cursor_info.flags == CURSOR_SHOWING)
 	{
 		ICONINFO icon_info;
+		icon_info.fIcon = false;
 		memset(&icon_info, 0, sizeof(ICONINFO));
 		GetIconInfo(cursor_info.hCursor, &icon_info);
 

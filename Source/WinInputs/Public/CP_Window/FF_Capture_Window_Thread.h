@@ -7,7 +7,7 @@
 // UE Includes.
 #include "HAL/Runnable.h"
 
-// Fordward Declerations.
+// Forward Declaration.
 class FRunnableThread;
 class AFF_Capture_Window;
 
@@ -29,15 +29,22 @@ public:
 
 	virtual void Toggle(bool bIsPause);
 
-protected:
-	
-	bool bStartThread = false;
-	FRunnableThread* RunnableThread = nullptr;
-	AFF_Capture_Window* ParentActor = nullptr;
-
 private:
 
+	// We use this to call capturer destroy only once.
+	std::once_flag Once_Flag;
+
+	bool bStartThread = false;
+	FRunnableThread* RunnableThread = nullptr;
+
+	// Comes from Actor Class (actually itself).
+	AFF_Capture_Window* ParentActor = nullptr;
+
+	// Comes from Actor Class.
 	FString ThreadName;
+
+	// Comes from Actor Class.
+	float SleepTime = 0.f;
 
 #ifdef _WIN64
 
@@ -61,13 +68,10 @@ private:
 
 	virtual bool Callback_Init_DC(FString& Error);
 	virtual bool Callback_Init_Bitmap(FString& Error, bool bReInit);
-
 	virtual void Callback_GDI_Release();
 	virtual void Callback_GDI_Buffer();
-
 	virtual void Callback_Cursor_Draw();
 
 	// Check if rectangle size changed. It also updates current rectangle of target window.
 	virtual bool IsWindowSizeChanged();
-
 };

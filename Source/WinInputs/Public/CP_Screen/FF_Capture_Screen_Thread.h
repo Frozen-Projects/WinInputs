@@ -7,7 +7,7 @@
 // UE Includes.
 #include "HAL/Runnable.h"
 
-// Fordward Declerations.
+// Forward Declaration.
 class FRunnableThread;
 class AFF_Capture_Screen;
 
@@ -29,21 +29,28 @@ public:
 
 	virtual void Toggle(bool bIsPause);
 
-protected:
-	
-	bool bStartThread = false;
-	FRunnableThread* RunnableThread = nullptr;
-	AFF_Capture_Screen* ParentActor = nullptr;
-
-	FString ThreadName;
-
 private:
 
-	// UPROPERTY from Actor Class.
-	bool bShowCursor = false;
+	// We use this to call capturer destroy only once.
+	std::once_flag Once_Flag;
+
+	bool bStartThread = false;
+	FRunnableThread* RunnableThread = nullptr;
+
+	// Comes from Actor Class (actually itself).
+	AFF_Capture_Screen* ParentActor = nullptr;
 
 	// Comes from Actor Class.
 	FMonitorInfo TargetMonitorInfo;
+
+	// Comes from Actor Class.
+	FString ThreadName;
+
+	// Comes from Actor Class.
+	float SleepTime = 0.f;
+
+	// UPROPERTY from Actor Class.
+	bool bShowCursor = false;
 
 #ifdef _WIN64
 

@@ -738,7 +738,7 @@ void UWinInputsBPLibrary::GetActiveWindows(TArray<FWinInfos>& WindowsInfos)
         RECT WinPos;
         RECT WinSize;
 
-        // Program Manager is standart Window Process we don't have to count it.
+        // Program Manager is standard Window Process we don't have to count it.
         if (WindowString != "Program Manager")
         {
             GetWindowThreadProcessId(WindowHandle, &ProcessID);
