@@ -22,8 +22,8 @@ FFF_Capture_Thread_Screen::~FFF_Capture_Thread_Screen()
 		this->RunnableThread->Suspend(true);
 		this->bStartThread = false;
 		this->RunnableThread->Suspend(false);
-		this->RunnableThread->Kill(true);
 		this->RunnableThread->WaitForCompletion();
+		this->RunnableThread->Kill(true);
 		delete this->RunnableThread;
 	}
 }

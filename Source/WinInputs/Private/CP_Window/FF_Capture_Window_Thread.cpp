@@ -22,8 +22,8 @@ FFF_Capture_Thread_Window::~FFF_Capture_Thread_Window()
 		this->RunnableThread->Suspend(true);
 		this->bStartThread = false;
 		this->RunnableThread->Suspend(false);
-		this->RunnableThread->Kill(true);
 		this->RunnableThread->WaitForCompletion();
+		this->RunnableThread->Kill(true);
 		delete this->RunnableThread;
 	}
 }
@@ -139,7 +139,8 @@ bool FFF_Capture_Thread_Window::Callback_Init_Bitmap(FString& Error, bool bReIni
 	CapturedData.Resolution.Y = Rectangle_Last.bottom - Rectangle_Last.top;
 	CapturedData.BufferSize = CapturedData.Resolution.X * CapturedData.Resolution.Y * 4;
 	CapturedData.Stride = (((32 * (size_t)CapturedData.Resolution.X + 31) & ~31) / 8.f) * CapturedData.Resolution.Y;
-	
+	CapturedData.Buffer = (uint8*)malloc(CapturedData.BufferSize);
+
 	memset(&BitmapFileHeader, 0, sizeof(BITMAPFILEHEADER));
 	BitmapFileHeader.bfType = 0x4D42;
 	BitmapFileHeader.bfOffBits = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER);
@@ -156,7 +157,7 @@ bool FFF_Capture_Thread_Window::Callback_Init_Bitmap(FString& Error, bool bReIni
 	// Unreal Engine use 32 Bit color because alpha.
 	BitmapInfo.bmiHeader.biBitCount = 32;
 
-	CapturedBitmap = CreateDIBSection(DC_Destination, &BitmapInfo, DIB_RGB_COLORS, (void**)&CapturedData.Buffer, NULL, NULL);
+	CapturedBitmap = CreateDIBSection(DC_Destination, &BitmapInfo, DIB_RGB_COLORS, (void**)&TempBuffer, NULL, NULL);
 	if (!CapturedBitmap)
 	{
 		DeleteDC(DC_Destination);
@@ -212,7 +213,10 @@ void FFF_Capture_Thread_Window::Callback_GDI_Buffer()
 
 	// Actual buffer functions.
 
-	//PrintWindow(TargetWindow, DC_Source, 2);
+	if (this->ParentActor->bUseHaCompability)
+	{
+		PrintWindow(TargetWindow, DC_Source, 2);
+	}
 
 	if (!BitBlt(DC_Destination, 0, 0, CapturedData.Resolution.X, CapturedData.Resolution.Y, DC_Source, 0, 0, SRCCOPY))
 	{
@@ -227,9 +231,18 @@ void FFF_Capture_Thread_Window::Callback_GDI_Buffer()
 		}
 	}
 
+	for (int32 Index_Pixel = 0; Index_Pixel < CapturedData.Resolution.X * CapturedData.Resolution.Y; Index_Pixel++)
+	{
+		int32 Index_Buffer = Index_Pixel * 4;
+		CapturedData.Buffer[Index_Buffer] = TempBuffer[Index_Buffer];
+		CapturedData.Buffer[Index_Buffer + 1] = TempBuffer[Index_Buffer + 1];
+		CapturedData.Buffer[Index_Buffer + 2] = TempBuffer[Index_Buffer + 2];
+		CapturedData.Buffer[Index_Buffer + 3] = 255;
+	}
+
 	if (!this->ParentActor->Data_Queue.Enqueue(CapturedData))
 	{
-		//UE_LOG(LogTemp, Warning, TEXT("There is a problem with enqueue."));
+		UE_LOG(LogTemp, Warning, TEXT("There is a problem with enqueue."));
 		FPlatformProcess::Sleep(this->SleepTime);
 
 		if (this->ParentActor->Data_Queue.IsFull())

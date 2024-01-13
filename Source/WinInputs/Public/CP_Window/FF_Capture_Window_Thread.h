@@ -63,6 +63,7 @@ private:
 
 #endif
 
+	uint8* TempBuffer = nullptr;
 	FCapturedData CapturedData;
 
 	virtual bool Callback_Init_DC(FString& Error);

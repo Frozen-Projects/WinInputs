@@ -41,7 +41,8 @@ protected:
 	FVector2D LastResolution;
 	FTimerHandle Timer_Handle_Capture;
 	class FFF_Capture_Thread_Window* Capture_Thread_Window = nullptr;
-	uint8* BGRA_Buffer = nullptr;
+	
+	//uint8* BGRA_Buffer = nullptr;
 
 public:
 
@@ -64,6 +65,9 @@ public:
 
 	UPROPERTY(BlueprintReadWrite, meta = (ToolTip = "", ExposeOnSpawn = "true"))
 	bool bShowCursor = false;
+
+	UPROPERTY(BlueprintReadWrite, meta = (ToolTip = "Enable Hardware Accelerated Window Compability", ExposeOnSpawn = "true"))
+	bool bUseHaCompability = false;
 
 	UPROPERTY(BlueprintReadOnly)
 	UTexture2D* CapturedTexture = nullptr;
