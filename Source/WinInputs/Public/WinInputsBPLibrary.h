@@ -12,6 +12,7 @@ THIRD_PARTY_INCLUDES_START
 #include "Windows/WindowsHWrapper.h"
 #include <WinUser.h>
 #include "wingdi.h"
+#include "dwmapi.h"
 #include "Windows/HideWindowsPlatformTypes.h"
 
 #include <mutex>

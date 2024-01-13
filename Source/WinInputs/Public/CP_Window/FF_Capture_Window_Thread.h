@@ -74,6 +74,9 @@ private:
 	// UPROPERTY from Actor Class.
 	bool bShowCursor = false;
 
+	// UPROPERTY from Actor Class.
+	bool bUseHaCompability = false;
+
 #ifdef _WIN64
 
 	FString WindowName;
@@ -82,11 +85,10 @@ private:
 	HDC DC_Source = NULL;
 	HDC DC_Destination = NULL;
 	
-	RECT Rectangle_Last;
-	RECT Rectangle_Current;
+	RECT WindowRect_Last;
+	RECT WindowRect_Current;
 
 	HBITMAP CapturedBitmap = NULL;
-	BITMAPFILEHEADER BitmapFileHeader;
 	BITMAPINFO BitmapInfo;
 
 #endif
@@ -94,12 +96,13 @@ private:
 	uint8* TempBuffer = nullptr;
 	FCapturedDataWindow CapturedData;
 
-	virtual bool Callback_Init_DC(FString& Error);
-	virtual bool Callback_Init_Bitmap(FString& Error, bool bReInit);
-	virtual void Callback_GDI_Release();
-	virtual void Callback_GDI_Buffer();
-	virtual bool Callback_Cursor_Draw();
+	virtual bool Init_DC(FString& Error);
+	virtual bool Init_Bitmap(FString& Error, bool bReInit);
+	virtual void GetCurrentRectangles();
+	virtual void GDI_Buffer();
+	virtual bool Cursor_Draw();
 
-	// Check if rectangle size changed. It also updates current rectangle of target window.
-	virtual bool IsWindowSizeChanged();
+	virtual bool IsResolutionChanged();
+
+	virtual void GDI_Release();
 };

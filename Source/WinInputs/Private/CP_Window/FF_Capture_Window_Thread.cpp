@@ -33,13 +33,13 @@ bool FFF_Capture_Thread_Window::Init()
 #ifdef _WIN64
 	FString Error;
 	
-	if (!this->Callback_Init_DC(Error))
+	if (!this->Init_DC(Error))
 	{
 		UE_LOG(LogTemp, Warning, TEXT("%s"), *FString(Error));
 		return false;
 	}
 
-	if (!this->Callback_Init_Bitmap(Error, false))
+	if (!this->Init_Bitmap(Error, false))
 	{
 		UE_LOG(LogTemp, Warning, TEXT("%s"), *FString(Error));
 		return false;
@@ -57,10 +57,12 @@ uint32 FFF_Capture_Thread_Window::Run()
 #ifdef _WIN64
 	while (this->bStartThread)
 	{
-		if (!this->IsWindowSizeChanged())
+		this->GetCurrentRectangles();
+
+		if (this->IsResolutionChanged())
 		{
 			FString Error;
-			if (!this->Callback_Init_Bitmap(Error, true))
+			if (!this->Init_Bitmap(Error, true))
 			{
 				UE_LOG(LogTemp, Warning, TEXT("%s"), *FString(Error));
 			}
@@ -68,8 +70,8 @@ uint32 FFF_Capture_Thread_Window::Run()
 			// If target window size changed, we need to clear data queue before continue.
 			this->ParentActor->Data_Queue.Empty();
 		}
-
-		this->Callback_GDI_Buffer();
+		
+		this->GDI_Buffer();
 	}
 
 	return 0;
@@ -83,7 +85,7 @@ void FFF_Capture_Thread_Window::Stop()
 	this->bStartThread = false;
 	
 #ifdef _WIN64
-	this->Callback_GDI_Release();
+	this->GDI_Release();
 #endif
 }
 
@@ -95,7 +97,11 @@ void FFF_Capture_Thread_Window::Toggle(bool bIsPause)
 	}
 }
 
-bool FFF_Capture_Thread_Window::Callback_Init_DC(FString& Error)
+/*
+* Callback Functions
+*/
+
+bool FFF_Capture_Thread_Window::Init_DC(FString& Error)
 {
 #ifdef _WIN64
 	this->WindowName = this->ParentActor->WindowName;
@@ -118,6 +124,7 @@ bool FFF_Capture_Thread_Window::Callback_Init_DC(FString& Error)
 	DC_Destination = CreateCompatibleDC(DC_Source);
 
 	this->bShowCursor = this->ParentActor->bShowCursor;
+	this->bUseHaCompability = this->ParentActor->bUseHaCompability;
 
 	return true;
 #else
@@ -125,25 +132,32 @@ bool FFF_Capture_Thread_Window::Callback_Init_DC(FString& Error)
 #endif
 }
 
-bool FFF_Capture_Thread_Window::Callback_Init_Bitmap(FString& Error, bool bReInit)
+bool FFF_Capture_Thread_Window::Init_Bitmap(FString& Error, bool bReInit)
 {
 #ifdef _WIN64
+
 	if (bReInit && CapturedBitmap)
 	{
 		DeleteObject(CapturedBitmap);
 	}
+	
+	RECT ClientRect_Last;
+	GetClientRect(TargetWindow, &ClientRect_Last);
+	DwmGetWindowAttribute(TargetWindow, DWMWA_EXTENDED_FRAME_BOUNDS, &WindowRect_Last, sizeof(WindowRect_Last));
 
-	GetWindowRect(TargetWindow, &Rectangle_Last);
+	if (!this->bUseHaCompability)
+	{
+		CapturedData.WindowOffset.X = (WindowRect_Last.right - ClientRect_Last.right) - (WindowRect_Last.left - ClientRect_Last.left);
+		CapturedData.WindowOffset.Y = (WindowRect_Last.bottom - ClientRect_Last.bottom) - (WindowRect_Last.top - ClientRect_Last.top);
+	}
 
-	CapturedData.Resolution.X = Rectangle_Last.right - Rectangle_Last.left;
-	CapturedData.Resolution.Y = Rectangle_Last.bottom - Rectangle_Last.top;
+	CapturedData.Resolution.X = WindowRect_Last.right - WindowRect_Last.left;
+	CapturedData.Resolution.Y = WindowRect_Last.bottom - WindowRect_Last.top;
+
 	CapturedData.BufferSize = CapturedData.Resolution.X * CapturedData.Resolution.Y * 4;
 	CapturedData.Stride = (((32 * (size_t)CapturedData.Resolution.X + 31) & ~31) / 8.f) * CapturedData.Resolution.Y;
-	CapturedData.Buffer = (uint8*)malloc(CapturedData.BufferSize);
 
-	memset(&BitmapFileHeader, 0, sizeof(BITMAPFILEHEADER));
-	BitmapFileHeader.bfType = 0x4D42;
-	BitmapFileHeader.bfOffBits = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER);
+	CapturedData.Buffer = (uint8*)malloc(CapturedData.BufferSize);
 
 	memset(&BitmapInfo, 0, sizeof(BITMAPINFO));
 	BitmapInfo.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
@@ -174,54 +188,35 @@ bool FFF_Capture_Thread_Window::Callback_Init_Bitmap(FString& Error, bool bReIni
 #endif
 }
 
-void FFF_Capture_Thread_Window::Callback_GDI_Release()
+void FFF_Capture_Thread_Window::GetCurrentRectangles()
 {
 #ifdef _WIN64
-	if (DC_Destination)
-	{
-		ReleaseDC(NULL, DC_Destination);
-		DeleteDC(DC_Destination);
-	}
 
-	if (DC_Source)
-	{
-		ReleaseDC(NULL, DC_Source);
-		DeleteDC(DC_Source);
-	}
-
-	if (CapturedBitmap)
-	{
-		DeleteObject(CapturedBitmap);
-	}
-
-	CapturedData = FCapturedDataWindow();
+	DwmGetWindowAttribute(TargetWindow, DWMWA_EXTENDED_FRAME_BOUNDS, &WindowRect_Current, sizeof(WindowRect_Current));
 
 #endif
 }
 
-void FFF_Capture_Thread_Window::Callback_GDI_Buffer()
+void FFF_Capture_Thread_Window::GDI_Buffer()
 {
 #ifdef _WIN64
 
-	RECT PositionRect;
-	GetWindowRect(TargetWindow, &PositionRect);
+	CapturedData.WindowLocation.X = WindowRect_Current.left;
+	CapturedData.WindowLocation.Y = WindowRect_Current.top;
 
-	CapturedData.WindowLocation.X = PositionRect.left;
-	CapturedData.WindowLocation.Y = PositionRect.top;
-
-	if (this->ParentActor->bUseHaCompability)
+	if (this->bUseHaCompability)
 	{
 		PrintWindow(TargetWindow, DC_Source, 2);
 	}
 
-	if (!BitBlt(DC_Destination, 0, 0, CapturedData.Resolution.X, CapturedData.Resolution.Y, DC_Source, 0, 0, SRCCOPY))
+	if (!BitBlt(DC_Destination, 0, 0, CapturedData.Resolution.X, CapturedData.Resolution.Y, DC_Source, -CapturedData.WindowOffset.X, -CapturedData.WindowOffset.Y, SRCCOPY | CAPTUREBLT))
 	{
 		return;
 	}
 
 	if (bShowCursor)
 	{
-		if (!this->Callback_Cursor_Draw())
+		if (!this->Cursor_Draw())
 		{
 			return;
 		}
@@ -232,7 +227,7 @@ void FFF_Capture_Thread_Window::Callback_GDI_Buffer()
 		return;
 	}
 
-	if (this->ParentActor->bUseHaCompability)
+	if (this->bUseHaCompability)
 	{
 		CapturedData.Buffer = nullptr;
 		CapturedData.Buffer = TempBuffer;
@@ -264,7 +259,7 @@ void FFF_Capture_Thread_Window::Callback_GDI_Buffer()
 #endif
 }
 
-bool FFF_Capture_Thread_Window::Callback_Cursor_Draw()
+bool FFF_Capture_Thread_Window::Cursor_Draw()
 {
 #ifdef _WIN64
 	
@@ -280,8 +275,8 @@ bool FFF_Capture_Thread_Window::Callback_Cursor_Draw()
 		GetIconInfo(cursor_info.hCursor, &icon_info);
 
 		// We have additional left and top sum because they fix multiple screen problem.
-		const int CursorPos_X = (cursor_info.ptScreenPos.x - Rectangle_Current.left - Rectangle_Current.left - icon_info.xHotspot) + Rectangle_Current.left;
-		const int CursorPos_Y = (cursor_info.ptScreenPos.y - Rectangle_Current.top - Rectangle_Current.top - icon_info.yHotspot) + Rectangle_Current.top;
+		const int CursorPos_X = (cursor_info.ptScreenPos.x - WindowRect_Current.left - WindowRect_Current.left - icon_info.xHotspot) + WindowRect_Current.left;
+		const int CursorPos_Y = (cursor_info.ptScreenPos.y - WindowRect_Current.top - WindowRect_Current.top - icon_info.yHotspot) + WindowRect_Current.top;
 
 		BITMAP bmpCursor;
 		memset(&bmpCursor, 0, sizeof(bmpCursor));
@@ -300,30 +295,42 @@ bool FFF_Capture_Thread_Window::Callback_Cursor_Draw()
 #endif
 }
 
-bool FFF_Capture_Thread_Window::IsWindowSizeChanged()
+bool FFF_Capture_Thread_Window::IsResolutionChanged()
 {
-#ifdef _WIN64
+	FVector2D CurrentResolution = FVector2D(this->WindowRect_Current.right - this->WindowRect_Current.left, this->WindowRect_Current.bottom - this->WindowRect_Current.top);
 
-	GetWindowRect(TargetWindow, &Rectangle_Current);
-
-	FVector2D Size_Last;
-	Size_Last.X = Rectangle_Last.right - Rectangle_Last.left;
-	Size_Last.Y = Rectangle_Last.bottom - Rectangle_Last.top;
-
-	FVector2D Size_Current;
-	Size_Current.X = Rectangle_Current.right - Rectangle_Current.left;
-	Size_Current.Y = Rectangle_Current.bottom - Rectangle_Current.top;
-
-	if (Size_Last == Size_Current)
+	if (CurrentResolution == this->CapturedData.Resolution)
 	{
-		return true;
+		return false;
 	}
 
 	else
 	{
-		return false;
+		return true;
 	}
-#else
-	return false;
+}
+
+void FFF_Capture_Thread_Window::GDI_Release()
+{
+#ifdef _WIN64
+	if (DC_Destination)
+	{
+		ReleaseDC(NULL, DC_Destination);
+		DeleteDC(DC_Destination);
+	}
+
+	if (DC_Source)
+	{
+		ReleaseDC(NULL, DC_Source);
+		DeleteDC(DC_Source);
+	}
+
+	if (CapturedBitmap)
+	{
+		DeleteObject(CapturedBitmap);
+	}
+
+	CapturedData = FCapturedDataWindow();
+
 #endif
 }
