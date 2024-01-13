@@ -53,7 +53,7 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 	// Transfer Queue.
-	TCircularQueue<FCapturedData> Data_Queue = TCircularQueue<FCapturedData>(1024);
+	TCircularQueue<FCapturedDataWindow> Data_Queue = TCircularQueue<FCapturedDataWindow>(1024);
 
 public:	
 

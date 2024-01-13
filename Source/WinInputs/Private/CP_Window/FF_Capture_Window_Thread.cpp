@@ -194,7 +194,7 @@ void FFF_Capture_Thread_Window::Callback_GDI_Release()
 		DeleteObject(CapturedBitmap);
 	}
 
-	CapturedData = FCapturedData();
+	CapturedData = FCapturedDataWindow();
 
 #endif
 }
@@ -203,15 +203,11 @@ void FFF_Capture_Thread_Window::Callback_GDI_Buffer()
 {
 #ifdef _WIN64
 
-	// We need to copy window buffer and get its position continuously. So, we can use this thread.
-
 	RECT PositionRect;
 	GetWindowRect(TargetWindow, &PositionRect);
 
 	CapturedData.WindowLocation.X = PositionRect.left;
 	CapturedData.WindowLocation.Y = PositionRect.top;
-
-	// Actual buffer functions.
 
 	if (this->ParentActor->bUseHaCompability)
 	{
@@ -231,13 +227,27 @@ void FFF_Capture_Thread_Window::Callback_GDI_Buffer()
 		}
 	}
 
-	for (int32 Index_Pixel = 0; Index_Pixel < CapturedData.Resolution.X * CapturedData.Resolution.Y; Index_Pixel++)
+	if (!TempBuffer)
 	{
-		int32 Index_Buffer = Index_Pixel * 4;
-		CapturedData.Buffer[Index_Buffer] = TempBuffer[Index_Buffer];
-		CapturedData.Buffer[Index_Buffer + 1] = TempBuffer[Index_Buffer + 1];
-		CapturedData.Buffer[Index_Buffer + 2] = TempBuffer[Index_Buffer + 2];
-		CapturedData.Buffer[Index_Buffer + 3] = 255;
+		return;
+	}
+
+	if (this->ParentActor->bUseHaCompability)
+	{
+		CapturedData.Buffer = nullptr;
+		CapturedData.Buffer = TempBuffer;
+	}
+
+	else
+	{
+		for (int32 Index_Pixel = 0; Index_Pixel < CapturedData.Resolution.X * CapturedData.Resolution.Y; Index_Pixel++)
+		{
+			int32 Index_Buffer = Index_Pixel * 4;
+			CapturedData.Buffer[Index_Buffer] = TempBuffer[Index_Buffer];
+			CapturedData.Buffer[Index_Buffer + 1] = TempBuffer[Index_Buffer + 1];
+			CapturedData.Buffer[Index_Buffer + 2] = TempBuffer[Index_Buffer + 2];
+			CapturedData.Buffer[Index_Buffer + 3] = 255;
+		}
 	}
 
 	if (!this->ParentActor->Data_Queue.Enqueue(CapturedData))

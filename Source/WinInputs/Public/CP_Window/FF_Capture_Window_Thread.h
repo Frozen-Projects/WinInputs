@@ -11,6 +11,34 @@
 class FRunnableThread;
 class AFF_Capture_Window;
 
+// This is not for blueprints.
+struct FCapturedDataWindow
+{
+
+public:
+
+	uint8* Buffer = nullptr;
+	size_t BufferSize = 0;
+	size_t Stride = 0;
+	
+	FVector2D Resolution;
+	FVector2D WindowOffset;
+	FVector2D WindowLocation;
+
+	bool IsDataValid()
+	{
+		if (Buffer && BufferSize > 0 && Resolution.X > 0 && Resolution.Y > 0)
+		{
+			return true;
+		}
+
+		else
+		{
+			return false;
+		}
+	}
+};
+
 class FFF_Capture_Thread_Window : public FRunnable
 {
 	
@@ -64,7 +92,7 @@ private:
 #endif
 
 	uint8* TempBuffer = nullptr;
-	FCapturedData CapturedData;
+	FCapturedDataWindow CapturedData;
 
 	virtual bool Callback_Init_DC(FString& Error);
 	virtual bool Callback_Init_Bitmap(FString& Error, bool bReInit);

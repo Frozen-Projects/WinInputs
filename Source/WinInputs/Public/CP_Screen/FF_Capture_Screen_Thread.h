@@ -11,6 +11,31 @@
 class FRunnableThread;
 class AFF_Capture_Screen;
 
+struct FCapturedDataScreen
+{
+
+public:
+
+	uint8* Buffer = nullptr;
+	size_t BufferSize = 0;
+	
+	FVector2D Resolution;
+	FVector2D ScreenStart;
+
+	bool IsDataValid()
+	{
+		if (Buffer && BufferSize > 0 && Resolution.X > 0 && Resolution.Y > 0)
+		{
+			return true;
+		}
+
+		else
+		{
+			return false;
+		}
+	}
+};
+
 class FFF_Capture_Thread_Screen : public FRunnable
 {
 	
@@ -60,7 +85,7 @@ private:
 
 #endif
 
-	FCapturedData CapturedData;
+	FCapturedDataScreen CapturedData;
 
 	virtual bool Callback_GDI_Init(FString& Error);
 	virtual void Callback_GDI_Release();

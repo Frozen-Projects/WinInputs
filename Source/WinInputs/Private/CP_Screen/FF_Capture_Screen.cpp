@@ -121,7 +121,8 @@ void AFF_Capture_Screen::ReleaseCapture()
 void AFF_Capture_Screen::GenerateTexture()
 {
 #ifdef _WIN64
-	FCapturedData EachData;
+	
+	FCapturedDataScreen EachData;
 	if (!this->Data_Queue.Dequeue(EachData))
 	{
 		UE_LOG(LogTemp, Warning, TEXT("There is a problem to dequeue captured window data."));
@@ -153,5 +154,6 @@ void AFF_Capture_Screen::GenerateTexture()
 
 		return;
 	}
+
 #endif
 }

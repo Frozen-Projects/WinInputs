@@ -143,7 +143,7 @@ void AFF_Capture_Window::GenerateTexture()
 {
 #ifdef _WIN64
 
-	FCapturedData EachData;
+	FCapturedDataWindow EachData;
 	if (!this->Data_Queue.Dequeue(EachData))
 	{
 		UE_LOG(LogTemp, Warning, TEXT("There is a problem to dequeue captured window data."));
@@ -158,8 +158,6 @@ void AFF_Capture_Window::GenerateTexture()
 
 	if (!this->CapturedTexture || LastResolution != EachData.Resolution)
 	{
-		//BGRA_Buffer = (uint8*)malloc(EachData.BufferSize);
-
 		this->CapturedTexture = UTexture2D::CreateTransient(EachData.Resolution.X, EachData.Resolution.Y, EPixelFormat::PF_B8G8R8A8);
 		this->CapturedTexture->NeverStream = true;
 		this->CapturedTexture->CompressionSettings = TextureCompressionSettings::TC_VectorDisplacementmap;
@@ -167,25 +165,11 @@ void AFF_Capture_Window::GenerateTexture()
 
 		LastResolution = FVector2D(EachData.Resolution.X, EachData.Resolution.Y);
 
-		//DelegateCaptureWindow.Broadcast(EachData.WindowLocation);
-
 		return;
 	}
 
 	else
 	{
-		/*
-		for (int32 Index_Pixel = 0; Index_Pixel < EachData.Resolution.X * EachData.Resolution.Y; Index_Pixel++)
-		{
-			int32 IndexBuffer = Index_Pixel * 4;
-		
-			BGRA_Buffer[IndexBuffer] = EachData.Buffer[IndexBuffer];
-			BGRA_Buffer[IndexBuffer + 1] = EachData.Buffer[IndexBuffer + 1];
-			BGRA_Buffer[IndexBuffer + 2] = EachData.Buffer[IndexBuffer + 2];
-			BGRA_Buffer[IndexBuffer + 3] = 255;
-		}
-		*/
-
 		const auto Region = new FUpdateTextureRegion2D(0, 0, 0, 0, EachData.Resolution.X, EachData.Resolution.Y);
 		this->CapturedTexture->UpdateTextureRegions(0, 1, Region, 4 * EachData.Resolution.X, 4, EachData.Buffer);
 		
