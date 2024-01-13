@@ -147,11 +147,6 @@ void FFF_Capture_Thread_Screen::Callback_GDI_Buffer()
 {
 #ifdef _WIN64
 	
-	if (bShowCursor)
-	{
-		this->Callback_Cursor_Draw();
-	}
-
 	FDisplayMetrics Display;
 	FDisplayMetrics::RebuildDisplayMetrics(Display);
 	
@@ -177,12 +172,27 @@ void FFF_Capture_Thread_Screen::Callback_GDI_Buffer()
 		return;
 	}
 
-	BitBlt(DC_Destination, 0, 0, CapturedData.Resolution.X, CapturedData.Resolution.Y, DC_Source, CapturedData.ScreenStart.X, CapturedData.ScreenStart.Y, SRCCOPY);
+	bool bCaptureResult = BitBlt(DC_Destination, 0, 0, CapturedData.Resolution.X, CapturedData.Resolution.Y, DC_Source, CapturedData.ScreenStart.X, CapturedData.ScreenStart.Y, SRCCOPY);
+
+	if (!bCaptureResult)
+	{
+		return;
+	}
+
+	if (bShowCursor)
+	{
+		this->Callback_Cursor_Draw();
+	}
 
 	if (!this->ParentActor->Data_Queue.Enqueue(CapturedData))
 	{
 		UE_LOG(LogTemp, Warning, TEXT("There is a problem to enqueue captured screen data."));
 		FPlatformProcess::Sleep(this->SleepTime);
+
+		if (this->ParentActor->Data_Queue.IsFull())
+		{
+			this->ParentActor->Data_Queue.Empty();
+		}
 	}
 
 #endif

@@ -26,6 +26,7 @@ public:
 
 	uint8* Buffer = nullptr;
 	size_t BufferSize = 0;
+	size_t Stride = 0;
 	FVector2D Resolution;
 
 	// Only available for screen capture.

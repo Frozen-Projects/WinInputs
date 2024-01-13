@@ -31,9 +31,6 @@ public:
 
 private:
 
-	// We use this to call capturer destroy only once.
-	std::once_flag Once_Flag;
-
 	bool bStartThread = false;
 	FRunnableThread* RunnableThread = nullptr;
 
@@ -46,23 +43,25 @@ private:
 	// Comes from Actor Class.
 	float SleepTime = 0.f;
 
+	// UPROPERTY from Actor Class.
+	bool bShowCursor = false;
+
 #ifdef _WIN64
 
 	FString WindowName;
 	
 	HWND TargetWindow = nullptr;
+	HDC DC_Source = NULL;
+	HDC DC_Destination = NULL;
 	
 	RECT Rectangle_Last;
 	RECT Rectangle_Current;
 
-	HDC DC_Source = NULL;
-	HDC DC_Destination = NULL;
 	HBITMAP CapturedBitmap = NULL;
+	BITMAPFILEHEADER BitmapFileHeader;
+	BITMAPINFO BitmapInfo;
 
 #endif
-
-	// UPROPERTY from Actor Class.
-	bool bShowCursor = false;
 
 	FCapturedData CapturedData;
 
@@ -70,7 +69,7 @@ private:
 	virtual bool Callback_Init_Bitmap(FString& Error, bool bReInit);
 	virtual void Callback_GDI_Release();
 	virtual void Callback_GDI_Buffer();
-	virtual void Callback_Cursor_Draw();
+	virtual bool Callback_Cursor_Draw();
 
 	// Check if rectangle size changed. It also updates current rectangle of target window.
 	virtual bool IsWindowSizeChanged();

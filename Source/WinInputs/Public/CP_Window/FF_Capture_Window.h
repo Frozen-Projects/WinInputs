@@ -18,6 +18,7 @@
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FDelegateCaptureWindow, FVector2D, TargetPosition);
 
+
 UCLASS()
 class WININPUTS_API AFF_Capture_Window : public AActor
 {
@@ -40,6 +41,7 @@ protected:
 	FVector2D LastResolution;
 	FTimerHandle Timer_Handle_Capture;
 	class FFF_Capture_Thread_Window* Capture_Thread_Window = nullptr;
+	uint8* BGRA_Buffer = nullptr;
 
 public:
 

@@ -2,8 +2,6 @@
 
 #include "CP_Window/FF_Capture_Window.h"
 
-FString Global_WindowName;
-
 // Sets default values.
 AFF_Capture_Window::AFF_Capture_Window() : Data_Queue(1024)
 {
@@ -102,8 +100,6 @@ bool AFF_Capture_Window::InitCapture()
 		return false;
 	}
 
-	Global_WindowName = WindowName;
-
 	this->ThreadName = "Thread_CP_WIN_" + FString::FromInt((int32)TargetWindowProcessId);
 	this->Capture_Thread_Window = new FFF_Capture_Thread_Window(this);
 
@@ -150,19 +146,21 @@ void AFF_Capture_Window::GenerateTexture()
 	FCapturedData EachData;
 	if (!this->Data_Queue.Dequeue(EachData))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("There is a problem to dequeue captured window data."));
+		//UE_LOG(LogTemp, Warning, TEXT("There is a problem to dequeue captured window data."));
 		return;
 	}
 
 	if (!EachData.IsDataValid())
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Captured window buffer is invalid (AFF_Capture_Window::GenerateTexture())"));
+		//UE_LOG(LogTemp, Warning, TEXT("Captured window buffer is invalid (AFF_Capture_Window::GenerateTexture())"));
 		return;
 	}
 
 	if (!this->CapturedTexture || LastResolution != EachData.Resolution)
 	{
-		this->CapturedTexture = UTexture2D::CreateTransient(EachData.Resolution.X, EachData.Resolution.Y, PF_B8G8R8A8);
+		BGRA_Buffer = (uint8*)malloc(EachData.BufferSize);
+
+		this->CapturedTexture = UTexture2D::CreateTransient(EachData.Resolution.X, EachData.Resolution.Y, EPixelFormat::PF_B8G8R8A8);
 		this->CapturedTexture->NeverStream = true;
 		this->CapturedTexture->CompressionSettings = TextureCompressionSettings::TC_VectorDisplacementmap;
 		this->CapturedTexture->UpdateResource();
@@ -176,12 +174,25 @@ void AFF_Capture_Window::GenerateTexture()
 
 	else
 	{
-		const auto Region = new FUpdateTextureRegion2D(0, 0, 0, 0, EachData.Resolution.X, EachData.Resolution.Y);
-		this->CapturedTexture->UpdateTextureRegions(0, 1, Region, 4 * EachData.Resolution.X, 4, EachData.Buffer);
+		
+		for (int32 Index_Pixel = 0; Index_Pixel < EachData.Resolution.X * EachData.Resolution.Y; Index_Pixel++)
+		{
+			int32 IndexBuffer = Index_Pixel * 4;
+		
+			BGRA_Buffer[IndexBuffer] = EachData.Buffer[IndexBuffer];
+			BGRA_Buffer[IndexBuffer + 1] = EachData.Buffer[IndexBuffer + 1];
+			BGRA_Buffer[IndexBuffer + 2] = EachData.Buffer[IndexBuffer + 2];
+			BGRA_Buffer[IndexBuffer + 3] = 255;
+			
+		}
 
+		const auto Region = new FUpdateTextureRegion2D(0, 0, 0, 0, EachData.Resolution.X, EachData.Resolution.Y);
+		this->CapturedTexture->UpdateTextureRegions(0, 1, Region, 4 * EachData.Resolution.X, 4, BGRA_Buffer);
+		
 		DelegateCaptureWindow.Broadcast(EachData.WindowLocation);
 
 		return;
 	}
+
 #endif
 }

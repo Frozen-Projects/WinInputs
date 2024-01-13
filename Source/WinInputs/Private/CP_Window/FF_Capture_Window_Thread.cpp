@@ -137,9 +137,13 @@ bool FFF_Capture_Thread_Window::Callback_Init_Bitmap(FString& Error, bool bReIni
 
 	CapturedData.Resolution.X = Rectangle_Last.right - Rectangle_Last.left;
 	CapturedData.Resolution.Y = Rectangle_Last.bottom - Rectangle_Last.top;
-	CapturedData.BufferSize = CapturedData.Resolution.X * CapturedData.Resolution.Y * sizeof(FColor);
+	CapturedData.BufferSize = CapturedData.Resolution.X * CapturedData.Resolution.Y * 4;
+	CapturedData.Stride = (((32 * (size_t)CapturedData.Resolution.X + 31) & ~31) / 8.f) * CapturedData.Resolution.Y;
 	
-	BITMAPINFO BitmapInfo;
+	memset(&BitmapFileHeader, 0, sizeof(BITMAPFILEHEADER));
+	BitmapFileHeader.bfType = 0x4D42;
+	BitmapFileHeader.bfOffBits = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER);
+
 	memset(&BitmapInfo, 0, sizeof(BITMAPINFO));
 	BitmapInfo.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
 	BitmapInfo.bmiHeader.biPlanes = 1;
@@ -188,6 +192,9 @@ void FFF_Capture_Thread_Window::Callback_GDI_Release()
 	{
 		DeleteObject(CapturedBitmap);
 	}
+
+	CapturedData = FCapturedData();
+
 #endif
 }
 
@@ -205,41 +212,36 @@ void FFF_Capture_Thread_Window::Callback_GDI_Buffer()
 
 	// Actual buffer functions.
 
-	if (bShowCursor)
+	//PrintWindow(TargetWindow, DC_Source, 2);
+
+	if (!BitBlt(DC_Destination, 0, 0, CapturedData.Resolution.X, CapturedData.Resolution.Y, DC_Source, 0, 0, SRCCOPY))
 	{
-		this->Callback_Cursor_Draw();
+		return;
 	}
 
-	PrintWindow(TargetWindow, DC_Source, 2);
-
-	bool bIsCaptureResult = BitBlt(DC_Destination, 0, 0, CapturedData.Resolution.X, CapturedData.Resolution.Y, DC_Source, CapturedData.ScreenStart.X, CapturedData.ScreenStart.Y, SRCCOPY);
-
-	if (!bIsCaptureResult)
+	if (bShowCursor)
 	{
-		std::call_once(this->Once_Flag, [this]() 
-			{ 
-				AsyncTask(ENamedThreads::GameThread, [this]()
-					{
-						UE_LOG(LogTemp, Warning, TEXT("There is a problem with \"BitBlt\" function on CaptureThread->Callback_GDI_Buffer. Probably target window closed."));
-						this->ParentActor->Destroy();
-					}
-				);
-			}
-		);
-		
-		return;
+		if (!this->Callback_Cursor_Draw())
+		{
+			return;
+		}
 	}
 
 	if (!this->ParentActor->Data_Queue.Enqueue(CapturedData))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("There is a problem to enqueue captured window data."));
+		//UE_LOG(LogTemp, Warning, TEXT("There is a problem with enqueue."));
 		FPlatformProcess::Sleep(this->SleepTime);
+
+		if (this->ParentActor->Data_Queue.IsFull())
+		{
+			this->ParentActor->Data_Queue.Empty();
+		}
 	}
 
 #endif
 }
 
-void FFF_Capture_Thread_Window::Callback_Cursor_Draw()
+bool FFF_Capture_Thread_Window::Callback_Cursor_Draw()
 {
 #ifdef _WIN64
 	
@@ -251,20 +253,27 @@ void FFF_Capture_Thread_Window::Callback_Cursor_Draw()
 	if (cursor_info.flags == CURSOR_SHOWING)
 	{
 		ICONINFO icon_info;
-		icon_info.fIcon = false;
 		memset(&icon_info, 0, sizeof(ICONINFO));
 		GetIconInfo(cursor_info.hCursor, &icon_info);
 
-		const int x = (cursor_info.ptScreenPos.x - Rectangle_Current.left - Rectangle_Current.left - icon_info.xHotspot) + Rectangle_Current.left;
-		const int y = (cursor_info.ptScreenPos.y - Rectangle_Current.top - Rectangle_Current.top - icon_info.yHotspot) + Rectangle_Current.top;
+		// We have additional left and top sum because they fix multiple screen problem.
+		const int CursorPos_X = (cursor_info.ptScreenPos.x - Rectangle_Current.left - Rectangle_Current.left - icon_info.xHotspot) + Rectangle_Current.left;
+		const int CursorPos_Y = (cursor_info.ptScreenPos.y - Rectangle_Current.top - Rectangle_Current.top - icon_info.yHotspot) + Rectangle_Current.top;
 
 		BITMAP bmpCursor;
 		memset(&bmpCursor, 0, sizeof(bmpCursor));
-		GetObjectA(icon_info.hbmColor, sizeof(bmpCursor), &bmpCursor);
+		GetObjectA(icon_info.hbmColor, sizeof(CapturedBitmap), &bmpCursor);
 
-		DrawIconEx(DC_Destination, x, y, cursor_info.hCursor, bmpCursor.bmWidth, bmpCursor.bmHeight, 0, NULL, DI_NORMAL);
+		return DrawIconEx(DC_Destination, CursorPos_X, CursorPos_Y, cursor_info.hCursor, bmpCursor.bmWidth, bmpCursor.bmHeight, 0, NULL, DI_NORMAL);
 	}
 
+	else
+	{
+		return false;
+	}
+
+#else
+	return false;
 #endif
 }
 
