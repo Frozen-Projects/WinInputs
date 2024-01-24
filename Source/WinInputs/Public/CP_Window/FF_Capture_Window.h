@@ -18,7 +18,6 @@
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FDelegateCaptureWindow, FVector2D, TargetPosition);
 
-
 UCLASS()
 class WININPUTS_API AFF_Capture_Window : public AActor
 {
