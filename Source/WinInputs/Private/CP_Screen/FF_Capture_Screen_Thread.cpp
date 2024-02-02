@@ -12,6 +12,7 @@ FFF_Capture_Thread_Screen::FFF_Capture_Thread_Screen(AFF_Capture_Screen* In_Pare
 
 	this->SleepTime = this->ParentActor->Rate;
 	this->ThreadName = this->ParentActor->ThreadName;
+
 	this->RunnableThread = FRunnableThread::Create(this, *this->ThreadName);
 }
 
