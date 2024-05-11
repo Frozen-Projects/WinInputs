@@ -10,6 +10,12 @@ public class WinInputs : ModuleRules
 	{
 		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
 
+        bEnableUndefinedIdentifierWarnings = false;
+        bEnableExceptions = true;
+        bUseRTTI = true;
+
+        bUseUnity = false;
+
         if (UnrealTargetPlatform.Win64 == Target.Platform)
         {
             //PublicAdditionalLibraries.Add("Shcore.lib");
