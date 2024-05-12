@@ -14,8 +14,6 @@ public class WinInputs : ModuleRules
         bEnableExceptions = true;
         bUseRTTI = true;
 
-        bUseUnity = false;
-
         if (UnrealTargetPlatform.Win64 == Target.Platform)
         {
             //PublicAdditionalLibraries.Add("Shcore.lib");
