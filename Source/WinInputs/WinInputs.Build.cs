@@ -10,7 +10,7 @@ public class WinInputs : ModuleRules
 	{
 		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
 
-        bEnableUndefinedIdentifierWarnings = false;
+        UndefinedIdentifierWarningLevel = WarningLevel.Off;
         bEnableExceptions = true;
         bUseRTTI = true;
 
