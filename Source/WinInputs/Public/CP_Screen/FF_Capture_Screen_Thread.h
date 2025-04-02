@@ -3,22 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-
-// UE Includes.
-#include "HAL/Runnable.h"
-
-THIRD_PARTY_INCLUDES_START
-#ifdef _WIN64
-#include "Windows/AllowWindowsPlatformTypes.h"
-#include "Windows/WindowsHWrapper.h"
-#include <WinUser.h>
-#include "wingdi.h"
-#include "dwmapi.h"
-#include "Windows/HideWindowsPlatformTypes.h"
-#endif
-
-#include <mutex>
-THIRD_PARTY_INCLUDES_END
+#include "WinInputs_Includes.h"
 
 // Forward Declaration.
 class FRunnableThread;
