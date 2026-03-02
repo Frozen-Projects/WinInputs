@@ -20,13 +20,13 @@ public:
 	FString WinName;
 
 	UPROPERTY(BlueprintReadWrite, Editanywhere)
-	int32 WinPID;
+	int32 WinPID = 0;
 
 	UPROPERTY(BlueprintReadWrite, Editanywhere)
-	FVector2D WinPos;
+	FVector2D WinPos = FVector2D::ZeroVector;
 
 	UPROPERTY(BlueprintReadWrite, Editanywhere)
-	FVector2D WinSize;
+	FVector2D WinSize = FVector2D::ZeroVector;
 
 };
 
